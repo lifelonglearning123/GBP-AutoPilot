@@ -1,0 +1,13 @@
+node_modules/
+.next/
+data/
+output/
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+
+# Pipedream deploy state (which source and logins are deployed)
+pipedream/.deployed.json
+
+# Client documents dropped in the project root (audits, reports)
+/*.pdf
