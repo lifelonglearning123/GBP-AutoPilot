@@ -6,12 +6,12 @@ hosting change, not a rewrite.
 
 | Rule (from the checklist) | Where it lives | Automation |
 |---|---|---|
-| 1. Claim and fill every field | Audit & fill tab | Claim/verification is manual. Description, categories, services are proposed by gpt-5.5, approved, then written via the API. |
+| 1. Claim and fill every field | Overview tab | Claim/verification is manual. Description, categories, services are proposed by gpt-5.5, approved, then written via the API. |
 | 2. Reviews and replies echoing services/town | Reviews tab, hourly job | Polled hourly. Drafts a reply per new review; posts automatically if auto-reply is on, otherwise waits for approval. |
-| 5. Every category | Audit & fill tab | Candidates come from Google's own category list; the model picks, never invents. |
+| 5. Every category | Overview tab | Candidates come from Google's own category list; the model picks, never invents. |
 | 6. Weekly Google Post | Posts tab, weekly job | Rotating angles (service, seasonal, review story, FAQ, behind the scenes, local). Draft or auto-publish. |
 | 4, 7, 8. Service × location pages, schema, directions | Website tab | Generates a static site: home, contact, per service, per area, per service×area. LocalBusiness + Service + FAQ + Breadcrumb JSON-LD and a Get Directions button on every page. |
-| 3. NAP consistency | Citations tab | Serper finds every page mentioning the business, gpt-5.5 extracts the NAP each page shows, the app diffs it against the profile and lists key UK directories with no listing. Read-only: pushing fixes is a first-party API (Facebook, Bing, Apple) or a partner (Synup / BrightLocal). |
+| 3. NAP consistency | Listings tab | Serper finds every page mentioning the business, gpt-5.5 extracts the NAP each page shows, the app diffs it against the profile and lists key UK directories with no listing. Read-only: pushing fixes is a first-party API (Facebook, Bing, Apple) or a partner (Synup / BrightLocal). |
 
 ## Scoring and the competitor benchmark
 
@@ -105,10 +105,10 @@ it with a clear message. Use it to audit a prospect before you manage their prof
 
 ## Google-side extras (live once API access is approved; mocked now)
 
-- **Q&A tab**: gpt-5.5 drafts owner-seeded questions and answers, posted as question + owner answer.
+- **Q&A**: removed 2026-09-22. Google retired the Q&A API on 3 November 2025 and public Q&A on profiles from December 2025.
 - **Photo queue** (Posts tab): public image URLs with captions, released one every N days by the scheduler.
 - **Performance stats**: Business Profile Performance API synced daily; 28-day views, calls, website
-  clicks and directions with the change on the previous 28 days, on each location and the dashboard.
+  clicks and directions with the change on the previous 28 days, at the top of each location.
 
 ## Run
 
@@ -170,7 +170,7 @@ patches; there is no sandbox.
 
 `src/instrumentation.ts` starts an in-process ticker (every 5 min) when the server boots. Per
 location it polls reviews hourly and runs the weekly post when `next_post_at` has passed. A missed
-slot runs at the next tick rather than being skipped. "Run scheduler now" on the dashboard forces a
+slot runs at the next tick rather than being skipped. "Run a tick now" in Settings forces a
 tick.
 
 ## Layout
@@ -193,8 +193,10 @@ src/lib/nap.ts        phone/postcode/name normalisers + HTML entity decoding
 src/lib/report.ts     prospect report data + HTML
 src/lib/ghl.ts        GoHighLevel push (contact, media, note, opportunity)
 src/lib/prospects.ts  batches: CSV / Serper Places intake, background runner
-src/lib/extras.ts     Q&A seeding, photo queue, Performance metrics
+src/lib/extras.ts     photo queue, photo check, Performance metrics
 src/lib/agency.ts     agency branding + GHL settings (settings table)
 src/lib/scheduler.ts  ticker
 src/app/api/action    every mutation as { action, ...params }
 ```
+#   G B P - A u t o P i l o t  
+ 
