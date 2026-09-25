@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { log } from './db';
-import { location, view, updateConfig } from './locations';
+import { location, view, updateConfig, type LocationRow } from './locations';
 import { agency } from './agency';
 import { audit } from './audit';
 import { latestRun } from './citations';
@@ -117,4 +117,27 @@ export async function push(locationId: string, opts: { pipelineId?: string; stag
   updateConfig(l.id, { ghl_contact_id: contactId, ghl_pushed_at: new Date().toISOString(), report_url: reportUrl ?? rep.file });
   log('ghl', 'ok', `contact ${contactId}${opportunityId ? `, opportunity ${opportunityId}` : ''}`, l.id);
   return { contactId, reportUrl, opportunityId };
+}
+
+/**
+ * A bad-review alert in GoHighLevel: a task due tomorrow and a note with the review, on the
+ * business's contact in the agency sub-account. Only businesses already pushed to GHL have a contact.
+ */
+export async function notifyBadReview(l: LocationRow, a: { title: string; detail: string; rating: number }): Promise<{ status: 'sent' | 'skipped'; detail: string }> {
+  const ag = agency();
+  if (!ag.ghl_token || !ag.ghl_location_id) return { status: 'skipped', detail: 'GoHighLevel is not set up on Settings.' };
+  if (!l.ghl_contact_id) return { status: 'skipped', detail: 'Not pushed to GoHighLevel yet, so there is no contact to add the alert to.' };
+  const due = new Date(Date.now() + 24 * 3_600_000).toISOString();
+  await api(`/contacts/${l.ghl_contact_id}/tasks`, {
+    method: 'POST',
+    body: JSON.stringify({
+      title: `Reply to the ${a.rating}-star Google review`,
+      body: `${a.title}\n\n\u201c${a.detail}\u201d\n\nReply on the Reviews tab in GBP Autopilot, or in Google Business Profile.`,
+      dueDate: due,
+      completed: false,
+    }),
+  });
+  await api(`/contacts/${l.ghl_contact_id}/notes`, { method: 'POST', body: JSON.stringify({ body: `${a.title}:\n\u201c${a.detail}\u201d` }) });
+  log('ghl', 'ok', `Bad-review task and note added for ${l.title}`, l.id);
+  return { status: 'sent', detail: 'Task and note added to the contact in GoHighLevel.' };
 }

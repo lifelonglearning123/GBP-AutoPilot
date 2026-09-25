@@ -5,6 +5,7 @@ import { keywords as keywordList, latestRun as latestKeywordRun, ranksFor } from
 import { latestGrid, latestDoneGrid, previousDoneGrid, gridSummary, gridPointsFor, centre, phoneQuery, isRunning, sidesLine } from '@/lib/grid';
 import GridControls from '@/components/GridControls';
 import GridMap from '@/components/GridMap';
+import { ensureCentre, centreNote } from '@/lib/geo';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,9 @@ export default async function MapPage({ params, searchParams }: { params: Promis
   const { k } = await searchParams;
   const l = location(locId(id))!;
   const v = view(l);
-  const c = centre(l);
+  // Google hands over a pin only when someone placed it by hand, so the position is worked out from
+  // the address the first time this tab is opened, and kept.
+  const c = await ensureCentre(l.id);
   const kws = keywordList(l.id).filter(x => x.active);
   // Positions from the Competitors tab, to explain a map that disagrees with them.
   const kr = latestKeywordRun(l.id);
@@ -48,6 +51,7 @@ export default async function MapPage({ params, searchParams }: { params: Promis
         last={done ? { size: done.size, radius: done.radius_mi, keywordIds: lastIds, withTown: Boolean(pts[0] && pts[0].query === pts[0].phrase) } : null}
         hasSerper={Boolean(process.env.SERPER_API_KEY)}
         hasPin={Boolean(c)}
+        centredOn={c ? centreNote(c) : null}
       />
       {latest?.status === 'error' && latest.id !== done?.id && <div className="panel p-3 text-sm" style={{ color: 'var(--bad)' }}>The last map did not finish: {latest.error}</div>}
 

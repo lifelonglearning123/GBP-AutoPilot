@@ -4,13 +4,12 @@ import { audit, LOW_COVERAGE } from '@/lib/audit';
 import { locId, locParam } from '@/lib/ids';
 import Tabs from '@/components/Tabs';
 import Action from '@/components/Action';
-import DeleteLocation from '@/components/DeleteLocation';
 import ReportActions from '@/components/ReportActions';
 import MetricsStrip from '@/components/MetricsStrip';
 import { summary } from '@/lib/extras';
 import ListingPanel from '@/components/ListingPanel';
 import { snapshot, enteredDiffs } from '@/lib/public';
-import { agency } from '@/lib/agency';
+import { verdict } from '@/lib/steps';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,26 +22,30 @@ export default async function LocationLayout({ children, params }: { children: R
   const partial = coverage < LOW_COVERAGE;
   const base = `/locations/${locParam(l.id)}`;
   const linked = isLinked(l);
+  const state = verdict(score, partial);
+  const where = [v.primaryCategory?.displayName, v.town].filter(Boolean).join(' in ') || v.addressLine || 'No category or address yet';
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-3">{l.title}{!linked && <span className="pill warn" title="Audited from the public listing. Writing to Google needs the profile connected through the API.">Added by hand · read-only</span>}</h1>
-          <div className="text-sm muted mt-1">
-            {v.primaryCategory?.displayName ?? 'No category'} · {v.addressLine || 'No address'} · {v.phone ?? 'No phone'}
-            {v.maps_uri && <> · <a className="underline" href={v.maps_uri} target="_blank" rel="noopener">Maps</a></>}
-            {l.synced_at && <> · synced {l.synced_at.slice(0, 16)}</>}
-          </div>
+      <div className="flex items-start justify-between gap-x-6 gap-y-3 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold flex items-center gap-3 flex-wrap">
+            {l.title}
+            {!linked && <span className="pill warn" title="Read from the public Google listing. Changing it here needs the profile connected to the app.">Added by hand</span>}
+          </h1>
+          <p className="text-sm muted mt-1.5">
+            {where}
+            {v.maps_uri && <> · <a className="underline" href={v.maps_uri} target="_blank" rel="noopener">See it on Google</a></>}
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <ReportActions id={l.id} reportUrl={l.report_url} pushedAt={l.ghl_pushed_at} ghlReady={Boolean(agency().ghl_token && agency().ghl_location_id)} />
-          <div className="text-right">
-            <div className={`score text-3xl font-semibold ${partial ? 'muted' : score >= 80 ? 'text-[var(--good)]' : score >= 50 ? 'text-[var(--warn)]' : 'text-[var(--bad)]'}`}>{score}<span className="text-sm muted">/100</span></div>
-            {partial && <div className="text-xs muted" title="Link the Google listing to score the rest">only {coverage}% checked</div>}
-          </div>
+          <span className="text-sm" title={partial ? `Only ${coverage} of the 100 points can be checked` : undefined}>
+            <span className="score display text-xl font-semibold" style={{ color: state.colour }}>{score}</span>
+            <span className="muted">/100</span>
+            <span className="ml-2" style={{ color: state.colour }}>{state.word}</span>
+          </span>
+          <ReportActions id={l.id} reportUrl={l.report_url} pushedAt={l.ghl_pushed_at} ghlReady={false} show="report" />
           {linked && <Action action="location.resync" params={{ id: l.id }} busy="Re-reading…">Re-read from Google</Action>}
-          <DeleteLocation id={l.id} linked={linked} />
         </div>
       </div>
       {linked && <MetricsStrip id={l.id} items={summary(l.id)} syncedAt={l.metrics_synced_at} />}

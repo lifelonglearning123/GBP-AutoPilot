@@ -1,4 +1,4 @@
-import { one, run, getSetting, setSetting, log } from './db';
+import { all, one, run, getSetting, setSetting, log } from './db';
 
 /**
  * Google OAuth for the single agency account.
@@ -31,8 +31,17 @@ export function redirectUri(): string {
 }
 export function hasOAuthConfig(): boolean { return Boolean(clientId() && clientSecret()); }
 
+/**
+ * A Google account the app has been given, with the refresh token that keeps it.
+ *
+ * There can be several. Business Profiles are owned per Google account, and one account's token
+ * cannot read another's locations, so somebody managing profiles under two sign-ins has to connect
+ * both. `login` is the email, because that is what a person recognises in a list.
+ */
 export type Connection = {
+  login: string;
   email: string | null;
+  name: string | null;
   refresh_token: string;
   access_token: string | null;
   expires_at: number;
@@ -40,17 +49,32 @@ export type Connection = {
   connected_at: string;
 };
 
-export function getConnection(): Connection | undefined {
-  return one<Connection>('SELECT * FROM google_connection WHERE id = 1');
+/** Every connected Google account, oldest first so the list never reshuffles itself. */
+export function listConnections(): Connection[] {
+  return all<any>('SELECT * FROM google_logins ORDER BY connected_at, login')
+    .map(r => ({ ...r, email: r.name ?? (r.login.includes('@') ? r.login : null) }));
 }
-export function isConnected(): boolean { return Boolean(getConnection()); }
 
-export function disconnect() {
-  const conn = getConnection();
-  run('DELETE FROM google_connection WHERE id = 1');
-  if (conn?.refresh_token) {
-    fetch(`${REVOKE}?token=${encodeURIComponent(conn.refresh_token)}`, { method: 'POST' }).catch(() => {});
+/** The first connection: for "is Google connected at all?" and for calls that name no account. */
+export function getConnection(): Connection | undefined {
+  return listConnections()[0];
+}
+export function isConnected(): boolean { return listConnections().length > 0; }
+
+/** One connection by login, for a call that belongs to a particular account. */
+export function connection(login: string): Connection | undefined {
+  return listConnections().find(c => c.login === login);
+}
+
+/** Forget one Google account, or all of them, revoking each token with Google as it goes. */
+export function disconnect(login?: string) {
+  const going = login ? listConnections().filter(c => c.login === login) : listConnections();
+  for (const c of going) {
+    run('DELETE FROM google_logins WHERE login = ?', c.login);
+    fetch(`${REVOKE}?token=${encodeURIComponent(c.refresh_token)}`, { method: 'POST' }).catch(() => {});
   }
+  // The old single-row table is kept in step so a downgrade cannot resurrect a revoked token.
+  if (!login || listConnections().length === 0) run('DELETE FROM google_connection WHERE id = 1');
 }
 
 export function authUrl(state: string): string {
@@ -106,15 +130,18 @@ export async function exchangeCode(code: string): Promise<Connection> {
     email = j?.email ?? null;
   } catch { /* nicety only */ }
 
+  // Keyed by the account's own email, so connecting a second Google account ADDS a login and
+  // reconnecting the same one refreshes it in place.
+  const login = (email ?? 'default').toLowerCase();
   run(
-    `INSERT INTO google_connection (id, email, refresh_token, access_token, expires_at, scope, connected_at)
-     VALUES (1,?,?,?,?,?, datetime('now'))
-     ON CONFLICT(id) DO UPDATE SET email = excluded.email, refresh_token = excluded.refresh_token,
+    `INSERT INTO google_logins (login, name, refresh_token, access_token, expires_at, scope, connected_at)
+     VALUES (?,?,?,?,?,?, datetime('now'))
+     ON CONFLICT(login) DO UPDATE SET name = excluded.name, refresh_token = excluded.refresh_token,
        access_token = excluded.access_token, expires_at = excluded.expires_at, scope = excluded.scope,
        connected_at = datetime('now')`,
-    email, tok.refresh_token, tok.access_token, expiresAt, String(tok.scope ?? '')
+    login, email, tok.refresh_token, tok.access_token, expiresAt, String(tok.scope ?? '')
   );
-  return getConnection()!;
+  return connection(login)!;
 }
 
 // ---------- Pipedream: borrowed Google access while our own API access request is reviewed ----------
@@ -183,6 +210,23 @@ export function dropBorrowedToken() {
 function accountLogins(): Record<string, string> {
   try { return JSON.parse(getSetting(LOGINS_KEY) ?? '{}') ?? {}; } catch { return {}; }
 }
+/**
+ * Forget mappings that point at a login we no longer hold.
+ *
+ * The map outlives the connections: switching from borrowed Pipedream tokens to our own accounts
+ * leaves every entry naming a Pipedream login, and disconnecting an account leaves its own. A stale
+ * entry is worse than none, because the token picker falls back to the first connection and Google
+ * answers "Requested entity was not found" for a business that first account cannot see. Cleared,
+ * the next listAccounts() learns the truth.
+ */
+export function pruneAccountLogins() {
+  if (viaPipedream()) return;
+  const mine = new Set(listConnections().map(c => c.login));
+  const m = accountLogins();
+  const kept = Object.fromEntries(Object.entries(m).filter(([, login]) => mine.has(login)));
+  if (Object.keys(kept).length !== Object.keys(m).length) setSetting(LOGINS_KEY, JSON.stringify(kept));
+}
+
 /** Which Google login manages a Business Profile account (accounts/123). Learnt whenever accounts are listed. */
 export function rememberAccountLogin(account: string, login: string) {
   const m = accountLogins();
@@ -199,10 +243,10 @@ function loginFor(resource?: string): string | undefined {
   return account ? accountLogins()[account] : undefined;
 }
 
-/** The Google logins the app can act as: each account connected in Pipedream, or the app's own connection. */
+/** The Google logins the app can act as: every account connected in Pipedream, or every one of our own. */
 export async function googleLogins(): Promise<{ login: string; name: string | null }[]> {
   if (viaPipedream()) return (await borrowTokens()).map(t => ({ login: t.login, name: t.name ?? t.email }));
-  return [{ login: 'own', name: getConnection()?.email ?? null }];
+  return listConnections().map(c => ({ login: c.login, name: c.email }));
 }
 
 /**
@@ -319,14 +363,17 @@ export async function accessToken(opts: { login?: string; resource?: string } = 
     const login = opts.login ?? loginFor(opts.resource);
     return (ts.find(t => t.login === login) ?? ts[0]).token;
   }
-  const conn = getConnection();
-  if (!conn) throw new Error('Google is not connected. Connect it on the Settings page.');
+  // Our own connections: the account that manages what the URL names, else the first one.
+  const want = opts.login ?? loginFor(opts.resource);
+  const conns = listConnections();
+  if (!conns.length) throw new Error('Google is not connected. Connect it on the Settings page.');
+  const conn = (want ? conns.find(c => c.login === want) : undefined) ?? conns[0];
   if (conn.access_token && conn.expires_at > Date.now() + EXPIRY_SKEW_MS) return conn.access_token;
 
   const tok = await tokenRequest({
     refresh_token: conn.refresh_token, client_id: clientId(), client_secret: clientSecret(), grant_type: 'refresh_token',
   });
   const expiresAt = Date.now() + Number(tok.expires_in ?? 3600) * 1000;
-  run('UPDATE google_connection SET access_token = ?, expires_at = ? WHERE id = 1', tok.access_token, expiresAt);
+  run('UPDATE google_logins SET access_token = ?, expires_at = ? WHERE login = ?', tok.access_token, expiresAt, conn.login);
   return tok.access_token as string;
 }

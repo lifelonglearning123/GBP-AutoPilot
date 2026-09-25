@@ -58,13 +58,13 @@ export default function ListingPanel({ id, snap, diffs, syncedAt, hasSerper }: {
         <>
           <div className="flex items-start justify-between gap-4">
             <div className="text-sm">
-              <div className="text-xs muted uppercase tracking-wide mb-1">Public Google listing</div>
+              <div className="text-xs muted mb-1">What the public Google listing shows</div>
               <div><strong>{L.title}</strong> · {L.address}{L.phone ? ` · ${L.phone}` : ''}</div>
               <div className="text-xs muted mt-1">
                 {L.rating ? `${L.rating}★ from ${L.ratingCount} reviews` : 'No reviews'} · {L.categories.length} categories
                 {L.hours ? ' · hours set' : ' · no hours'}
                 {' · '}<a href={L.mapsUrl} target="_blank" rel="noopener" className="underline">open in Maps</a>
-                {syncedAt && <> · read {syncedAt.slice(0, 16)}</>}
+                {syncedAt && <> · last read {syncedAt.slice(0, 10)}</>}
                 {snap?.matchedBy === 'search' && <> · <span style={{ color: 'var(--warn)' }}>matched by search, check it is the right business</span></>}
               </div>
             </div>

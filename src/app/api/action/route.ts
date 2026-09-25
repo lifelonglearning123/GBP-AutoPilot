@@ -15,7 +15,11 @@ import * as pub from '@/lib/public';
 import * as bench from '@/lib/benchmark';
 import * as kw from '@/lib/keywords';
 import * as grid from '@/lib/grid';
+import { ensureCentre } from '@/lib/geo';
+import { withUsage, saveRates } from '@/lib/usage';
 import { tick } from '@/lib/scheduler';
+import * as alerts from '@/lib/alerts';
+import * as history from '@/lib/history';
 import { createPhoto, testAccess } from '@/lib/gbp';
 
 export const runtime = 'nodejs';
@@ -29,7 +33,13 @@ export const maxDuration = 600;
 const handlers: Record<string, (p: any) => Promise<unknown> | unknown> = {
   'sync': () => locations.syncAll(),
   'google.test': async () => { const r = await testAccess(); if (!r.ok) throw new Error(r.detail); return r; },
-  'location.resync': p => locations.resync(p.id),
+  // Re-reading a profile also reads its photos, so the photo check is current.
+  'location.resync': async p => { const r = await locations.resync(p.id); await extras.syncPhotos(p.id).catch(() => null); return r; },
+  'photos.check': p => extras.syncPhotos(p.id),
+  'reviews.postAll': p => reviews.postAll(p.id),
+  'alerts.seen': p => alerts.markSeen(Number(p.id)),
+  'alerts.seenAll': p => alerts.markAllSeen(p.locationId ? String(p.locationId) : undefined),
+  'history.record': () => history.recordWeeklyScores(),
   'location.manual.save': p => locations.saveManual(p.input, p.id),
   'location.delete': p => locations.deleteLocation(p.id),
 
@@ -64,7 +74,7 @@ const handlers: Record<string, (p: any) => Promise<unknown> | unknown> = {
   'keywords.weekly': p => locations.updateConfig(p.id, { keywords_weekly: p.on ? 1 : 0 }),
 
   // Map grid: runs in the background; the page polls the run's progress.
-  'grid.start': p => grid.startGrid(p.id, { size: Number(p.size), radiusMi: Number(p.radius), keywordIds: (p.keywordIds ?? []).map(Number), withTown: Boolean(p.withTown) }),
+  'grid.start': async p => { await ensureCentre(p.id); return grid.startGrid(p.id, { size: Number(p.size), radiusMi: Number(p.radius), keywordIds: (p.keywordIds ?? []).map(Number), withTown: Boolean(p.withTown) }); },
   'grid.monthly': p => locations.updateConfig(p.id, { grid_monthly: p.on ? 1 : 0 }),
   'location.config': p => locations.updateConfig(p.id, p.config),
   'location.basics': p => locations.saveBasics(p.id, p.basics ?? {}),
@@ -110,10 +120,6 @@ const handlers: Record<string, (p: any) => Promise<unknown> | unknown> = {
   'prospects.delete': p => prospects.deleteBatch(Number(p.id)),
   'prospects.retry': p => prospects.retryErrors(Number(p.id)),
 
-  'qna.generate': p => extras.generateQna(p.id, Number(p.count) || 6),
-  'qna.edit': p => extras.editQna(Number(p.id), p.question, p.answer),
-  'qna.reject': p => extras.rejectQna(Number(p.id)),
-  'qna.post': p => extras.postQna(Number(p.id)),
   'photos.enqueue': p => extras.enqueuePhotos(p.id, p.lines, p.category),
   'photos.remove': p => extras.removePhoto(Number(p.id)),
   'photos.post': p => extras.postPhoto(Number(p.id)),
@@ -121,6 +127,7 @@ const handlers: Record<string, (p: any) => Promise<unknown> | unknown> = {
 
   'agency.save': p => saveAgency(p.patch),
   'settings.set': p => setSetting(p.key, p.value),
+  'usage.rates': p => saveRates({ serperPer1k: Number(p.serperPer1k), aiPer1m: Number(p.aiPer1m) }),
   'scheduler.tick': () => tick({ manual: true }),
   // Called by the scheduler's own timer (see start() in scheduler.ts). Answers at once and lets the
   // tick run on, because a tick can take minutes and the timer only needs to know it started.
@@ -133,7 +140,9 @@ export async function POST(req: Request) {
   const h = handlers[body?.action];
   if (!h) return NextResponse.json({ error: `Unknown action ${body?.action}` }, { status: 400 });
   try {
-    const result = await h(body);
+    // The id in the request is the business this job is for, so usage.ts can bill it to them.
+    const who = typeof body.id === 'string' && body.id.includes('/') ? body.id : typeof body.locationId === 'string' ? body.locationId : null;
+    const result = await withUsage(who, String(body.action), () => h(body));
     return NextResponse.json({ ok: true, result: result ?? null });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? String(e) }, { status: 500 });

@@ -2,13 +2,14 @@ import type { AuditItem } from '@/lib/audit';
 import { groupTotals } from '@/lib/audit';
 import { pts } from '@/lib/format';
 import StatusIcon from './StatusIcon';
+import { GROUP_LABEL } from '@/lib/steps';
 
-/** Every check, grouped, with the points it earned: the reference behind the score. */
+/** Every check, grouped, with the points it earned: the detail behind the score, for anyone who wants it. */
 export default function Scorecard({ items, note }: { items: AuditItem[]; note: string }) {
   return (
-    <section aria-labelledby="card-h" className="flex flex-col gap-5">
+    <section aria-labelledby="card-h" className="flex flex-col gap-5 sm:block sm:columns-2 sm:gap-8 sm:[&>*]:mb-6 [&>*]:break-inside-avoid">
       <div>
-        <h2 id="card-h" className="text-lg font-semibold">Scorecard</h2>
+        <h3 id="card-h" className="font-semibold">The full checklist</h3>
         <p className="text-xs muted mt-1">{note}</p>
       </div>
       {groupTotals(items).map(g => {
@@ -19,7 +20,7 @@ export default function Scorecard({ items, note }: { items: AuditItem[]; note: s
             <summary className="flex items-center justify-between gap-2 pb-1.5 border-b cursor-pointer list-none [&::-webkit-details-marker]:hidden rounded-sm" style={{ borderColor: 'var(--line)' }}>
               <span className="flex items-center gap-2">
                 {full && <StatusIcon grade="good" size={14} />}
-                <h3 className="text-sm font-semibold">{g.group}</h3>
+                <h4 className="text-sm font-semibold">{GROUP_LABEL[g.group]}</h4>
               </span>
               <span className="flex items-center gap-2">
                 <span className="text-xs muted score">{g.knownWeight ? `${pts(g.earned)} of ${pts(g.weight)}` : 'not checked'}</span>

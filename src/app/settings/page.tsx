@@ -1,4 +1,4 @@
-import { getConnection, hasOAuthConfig, redirectUri, viaPipedream, pipedreamHalfSet, borrowedToken, pipedreamBudget, pipedreamWindows } from '@/lib/gauth';
+import { listConnections, hasOAuthConfig, redirectUri, viaPipedream, pipedreamHalfSet, borrowedToken, pipedreamBudget, pipedreamWindows } from '@/lib/gauth';
 import { isMock } from '@/lib/gbp';
 import { llmInfo } from '@/lib/llm';
 import { all, getSetting, parse } from '@/lib/db';
@@ -16,7 +16,7 @@ export default function SettingsPage({ searchParams }: { searchParams: Promise<{
 
 async function Inner({ sp }: { sp: Promise<{ error?: string; connected?: string }> }) {
   const { error, connected } = await sp;
-  const conn = getConnection();
+  const conns = listConnections();
   const pd = viaPipedream();
   const bt = borrowedToken();
   const budget = pipedreamBudget();
@@ -62,17 +62,34 @@ async function Inner({ sp }: { sp: Promise<{ error?: string; connected?: string 
             Last test, {new Date(test.at).toLocaleString('en-GB')}: {test.detail}
           </div>
         )}
-        {conn ? (
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <div>{pd ? 'Your own connection, unused while Pipedream is on: ' : 'Connected as '}<strong>{conn.email ?? 'unknown'}</strong> since {conn.connected_at.slice(0, 16)}</div>
-            <div className="flex gap-2">
-              {!pd && <Action action="google.test" busy="Testing…">Test Google access</Action>}
-              <a className="btn danger" href="/api/auth/google/disconnect">Disconnect</a>
+        {conns.length ? (
+          <div className="flex flex-col gap-2 text-sm">
+            {pd && <div className="muted">Your own connections, unused while Pipedream is on:</div>}
+            {conns.map(c => (
+              <div key={c.login} className="flex items-center justify-between gap-3">
+                <div>
+                  <strong>{c.email ?? c.login}</strong>
+                  <span className="muted"> · connected {c.connected_at.slice(0, 16)}</span>
+                </div>
+                <a className="btn danger" href={`/api/auth/google/disconnect?login=${encodeURIComponent(c.login)}`}>Disconnect</a>
+              </div>
+            ))}
+            {/* Profiles live under the Google account that owns them, so managing profiles across two
+                sign-ins means connecting both. Each one's locations are then read with its own token. */}
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <div className="text-xs muted">
+                Manage profiles under another Google account? Connect that one too — each account&rsquo;s
+                businesses are read with its own sign-in.
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {!pd && <Action action="google.test" busy="Testing…">Test Google access</Action>}
+                <a className="btn" href="/api/auth/google/start">Connect another account</a>
+              </div>
             </div>
           </div>
         ) : hasOAuthConfig() ? (
           <div className="flex items-center justify-between gap-3 text-sm">
-            <div>Sign in with the Workspace account that every client has added as a Manager on their profile.</div>
+            <div>Sign in with the Google account that manages your business profiles. You can add more afterwards.</div>
             <a className="btn primary" href="/api/auth/google/start">Connect Google</a>
           </div>
         ) : (

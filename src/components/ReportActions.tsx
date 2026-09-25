@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { callAction } from './Action';
 
-export default function ReportActions({ id, reportUrl, pushedAt, ghlReady }: { id: string; reportUrl: string | null; pushedAt: string | null; ghlReady: boolean }) {
+export default function ReportActions({ id, reportUrl, pushedAt, ghlReady, show = 'all' }: {
+  id: string; reportUrl: string | null; pushedAt: string | null; ghlReady: boolean; show?: 'all' | 'report' | 'ghl';
+}) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
   const router = useRouter();
@@ -27,11 +29,15 @@ export default function ReportActions({ id, reportUrl, pushedAt, ghlReady }: { i
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex gap-2">
-        {reportUrl && <a className="btn" href={view} target="_blank" rel="noopener">View report</a>}
-        <button className="btn" onClick={build} disabled={Boolean(busy)}>{busy === 'report' ? 'Building…' : reportUrl ? 'Rebuild report' : 'Build report'}</button>
-        <button className="btn primary" onClick={push} disabled={Boolean(busy) || !ghlReady} title={ghlReady ? undefined : 'Configure GHL on Settings'}>{busy === 'ghl' ? 'Pushing…' : pushedAt ? 'Re-push to GHL' : 'Push to GHL'}</button>
+        {show !== 'ghl' && reportUrl && <a className="btn" href={view} target="_blank" rel="noopener">View report</a>}
+        {show !== 'ghl' && <button className="btn" onClick={build} disabled={Boolean(busy)}>{busy === 'report' ? 'Building…' : reportUrl ? 'Rebuild report' : 'Build report'}</button>}
+        {show !== 'report' && (
+          <button className="btn" onClick={push} disabled={Boolean(busy) || !ghlReady} title={ghlReady ? undefined : 'Add the GoHighLevel details on Settings first'}>
+            {busy === 'ghl' ? 'Sending…' : pushedAt ? 'Send to GoHighLevel again' : 'Send to GoHighLevel'}
+          </button>
+        )}
       </div>
-      {(msg || pushedAt) && <div className="text-xs muted max-w-md text-right">{msg || `In GHL since ${pushedAt!.slice(0, 16).replace('T', ' ')}`}</div>}
+      {(msg || (show !== 'report' && pushedAt)) && <div className="text-xs muted max-w-md text-right">{msg || `In GoHighLevel since ${pushedAt!.slice(0, 16).replace('T', ' ')}`}</div>}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { audit } from './audit';
 import * as citations from './citations';
 import { enrich } from './public';
 import { ensureBenchmark } from './benchmark';
+import { meter, CREDITS } from './usage';
 
 /**
  * Bulk prospecting. A batch is a list of businesses from a CSV paste or a Serper Places search.
@@ -60,6 +61,7 @@ export function importCsv(name: string, csv: string, budget = 10): Batch {
 export async function searchPlaces(name: string, query: string, budget = 10): Promise<Batch> {
   const key = process.env.SERPER_API_KEY?.trim();
   if (!key) throw new Error('SERPER_API_KEY is not set');
+  meter('serper', { credits: CREDITS.places, kind: 'prospecting', locationId: null });
   const res = await fetch('https://google.serper.dev/places', {
     method: 'POST', headers: { 'X-API-KEY': key, 'Content-Type': 'application/json' }, body: JSON.stringify({ q: query, gl: 'gb', hl: 'en' }),
   });

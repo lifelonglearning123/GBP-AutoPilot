@@ -2,6 +2,7 @@ import { one, run, parse, log } from './db';
 import { json as llmJson, hasLLM } from './llm';
 import { location, view, isLinked, type LocationRow } from './locations';
 import { normName, normPhone, normPostcode, POSTCODE_RE } from './nap';
+import { meter, CREDITS } from './usage';
 
 /**
  * Competitor benchmark. Local rankings are a contest: 26 reviews can lead one town and trail in
@@ -55,6 +56,7 @@ export function get(l: Pick<LocationRow, 'benchmark_json'>): Benchmark | null {
 async function placesPage(q: string, page: number): Promise<any[]> {
   const key = process.env.SERPER_API_KEY?.trim();
   if (!key) throw new Error('SERPER_API_KEY is not set, so competitors cannot be looked up.');
+  meter('serper', { credits: CREDITS.places, kind: 'searches' });
   const res = await fetch(`${SERPER}/places`, {
     method: 'POST', headers: { 'X-API-KEY': key, 'Content-Type': 'application/json' },
     body: JSON.stringify({ q, gl: 'gb', hl: 'en', page }),

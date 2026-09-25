@@ -1,62 +1,7 @@
 import { all, one, run, log } from './db';
 import { json as llmJson } from './llm';
 import { location, view, updateConfig, type LocationRow } from './locations';
-import { createQuestionWithAnswer, createPhoto, fetchDailyMetrics, DAILY_METRICS, type DailyMetric } from './gbp';
-
-// ======================= Q&A seeding =======================
-
-export type QnaRow = { id: number; location_id: string; question: string; answer: string; status: 'draft' | 'posted' | 'failed' | 'rejected'; google_name: string | null; error: string | null; posted_at: string | null; created_at: string };
-
-export function qna(locationId: string): QnaRow[] {
-  return all<QnaRow>('SELECT * FROM qna WHERE location_id = ? ORDER BY id DESC', locationId);
-}
-
-/**
- * The Q&A section is public and indexed, and left alone it fills with strangers' questions or
- * stays empty. Seeding it with the questions customers actually ask, answered by the owner, is
- * cheap and durable. Pulls FAQs from generated site pages first so answers stay consistent.
- */
-export async function generateQna(locationId: string, count = 6): Promise<QnaRow[]> {
-  const l = location(locationId);
-  if (!l) throw new Error('Unknown location');
-  const v = view(l);
-  const siteFaqs = all<{ content_json: string }>('SELECT content_json FROM site_pages WHERE location_id = ?', locationId)
-    .flatMap(p => { try { return (JSON.parse(p.content_json).faqs ?? []) as { q: string; a: string }[]; } catch { return []; } }).slice(0, 20);
-  const existing = qna(locationId).filter(q => q.status !== 'rejected').map(q => q.question);
-  const system = `You write owner-seeded Google Business Profile Q&A entries for ${v.title}, a ${v.primaryCategory?.displayName ?? 'local business'} in ${v.town || 'the local area'}.
-Voice: ${v.brand_voice || 'plain, warm, professional British English; the owner speaking.'}
-Rules: questions phrased the way a customer would type them (pricing, areas covered, availability, guarantees, process, parking, payment). Answers 1 to 3 sentences, specific, mention the town or a service naturally once. No URLs, no phone numbers, no emojis. Do not repeat existing questions.
-Return JSON: { "items": [{ "question": string, "answer": string }] } with exactly ${count} items.`;
-  const user = [
-    `Services: ${[...new Set([...v.offeredServices, ...v.serviceNames])].join(', ') || 'general'}`,
-    `Areas: ${v.serviceAreas.join(', ') || v.town}`,
-    `Opening days: ${v.hoursPeriods.map((p: any) => p.openDay).join(', ') || 'unknown'}`,
-    `Existing questions (avoid): ${existing.join(' | ') || 'none'}`,
-    `FAQs already written for the website (reuse where sensible):\n${siteFaqs.map(f => `Q: ${f.q}\nA: ${f.a}`).join('\n') || '(none)'}`,
-  ].join('\n\n');
-  const out = await llmJson<{ items: { question: string; answer: string }[] }>(system, user);
-  for (const it of (out.items ?? []).slice(0, count)) {
-    if (it.question && it.answer) run('INSERT INTO qna (location_id, question, answer) VALUES (?,?,?)', locationId, String(it.question).trim(), String(it.answer).trim());
-  }
-  return qna(locationId);
-}
-
-export function editQna(id: number, question: string, answer: string) { run(`UPDATE qna SET question = ?, answer = ? WHERE id = ? AND status = 'draft'`, question, answer, id); }
-export function rejectQna(id: number) { run(`UPDATE qna SET status = 'rejected' WHERE id = ?`, id); }
-
-export async function postQna(id: number): Promise<void> {
-  const q = one<QnaRow>('SELECT * FROM qna WHERE id = ?', id);
-  if (!q) throw new Error('Unknown Q&A');
-  try {
-    const g = await createQuestionWithAnswer(q.location_id, q.question, q.answer);
-    run(`UPDATE qna SET status = 'posted', google_name = ?, posted_at = datetime('now'), error = NULL WHERE id = ?`, g.name, id);
-    log('qna', 'ok', q.question.slice(0, 80), q.location_id);
-  } catch (e: any) {
-    run(`UPDATE qna SET status = 'failed', error = ? WHERE id = ?`, e.message, id);
-    log('qna', 'error', e.message, q.location_id);
-    throw e;
-  }
-}
+import { listMedia, customerMediaCount, createPhoto, fetchDailyMetrics, DAILY_METRICS, type DailyMetric } from './gbp';
 
 // ======================= Photo queue =======================
 
@@ -147,3 +92,25 @@ export function summary(locationId: string): MetricSummary[] {
 }
 
 export { DAILY_METRICS };
+
+// ======================= Photo check =======================
+
+/**
+ * Read how many photos the business has added and when the newest went up, for the audit's photo
+ * check (10 or more, and a new one every month). Customer photos are counted too, for the note.
+ */
+export async function syncPhotos(locationId: string): Promise<{ count: number; latest: string | null }> {
+  const l = location(locationId);
+  if (!l) throw new Error('Unknown location');
+  const { items, total } = await listMedia(l.account, l.id);
+  const photos = items.filter(m => (m.mediaFormat ?? 'PHOTO') === 'PHOTO');
+  // When Google has more than was read, trust its total for the count.
+  const count = items.length < total ? total - (items.length - photos.length) : photos.length;
+  const latest = photos.map(m => m.createTime ?? '').filter(Boolean).sort().pop() ?? null;
+  let customers: number | null = null;
+  try { customers = await customerMediaCount(l.account, l.id); } catch { /* optional */ }
+  run(`UPDATE locations SET photos_count = ?, photos_customer_count = ?, photos_latest_at = ?, photos_synced_at = datetime('now') WHERE id = ?`,
+    count, customers, latest, l.id);
+  log('photos', 'ok', `${count} photos from the business${customers !== null ? `, ${customers} from customers` : ''}; newest ${latest ? latest.slice(0, 10) : 'none'}`, l.id);
+  return { count, latest };
+}

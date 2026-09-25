@@ -4,6 +4,7 @@ import { location, view, updateConfig, type LocationRow } from './locations';
 import { searchMarket, proposeQuery, isSelf, MIN_RESULTS } from './benchmark';
 import { fetchListing } from './public';
 import { normName } from './nap';
+import { meter, CREDITS } from './usage';
 
 /**
  * Multi-keyword local visibility. One search hides most of the picture: J's Electrical is 1st for
@@ -102,6 +103,7 @@ async function autocomplete(q: string): Promise<string[]> {
   const key = process.env.SERPER_API_KEY?.trim();
   if (!key) return [];
   try {
+    meter('serper', { credits: CREDITS.autocomplete, kind: 'search suggestions' });
     const res = await fetch(`${SERPER}/autocomplete`, {
       method: 'POST', headers: { 'X-API-KEY': key, 'Content-Type': 'application/json' },
       body: JSON.stringify({ q, gl: 'gb', hl: 'en' }),

@@ -122,6 +122,16 @@ export const FAQ: FaqSection[] = [
         ],
       },
       {
+        id: 'map-pin',
+        q: 'Why does the map pin say "not checked", and can the app set it?',
+        a: [
+          'The map pin is the exact spot on Google Maps a customer is sent to. Google works one out from the address on its own, and the owner can drag it to the right door on the Google Business Profile website.',
+          'Google only tells us about a pin that was **placed by hand**: its own words are that the field is returned only when the value was accepted as the location was created or moved on the Google website, and that it "can only be updated by approved clients". So the app cannot set or move a pin, and a profile without one is simply using Google’s automatic spot, which is often right.',
+          'Because of that, the pin earns its point when one has been placed by hand and is left out of the score otherwise, rather than counted as a failure. If the marker on Maps is on the wrong door, unit or side of the road, move it in Google: **Edit profile → Location**, drag the pin, save. Google may ask you to verify the business again.',
+          'The **Map** tab still works without a pin. The first time you open it, the address is turned into a position using OpenStreetMap, or the middle of the postcode if that fails, and the map says which it used. The position is worked out once and kept, and it is looked up again if the address changes.',
+        ],
+      },
+      {
         id: 'competitors',
         q: 'Where do the competitors and the local position come from?',
         a: [
@@ -249,6 +259,52 @@ export const FAQ: FaqSection[] = [
     ],
   },
   {
+    title: 'Reviews, alerts and progress',
+    items: [
+      {
+        id: 'reply-modes',
+        q: 'Should review replies be automatic?',
+        a: [
+          'Each business has its own setting on its **Reviews** tab. **Automatically**: when a new review arrives, the AI writes a reply in the business’s voice and posts it straight away. **After I approve them**: replies are drafted and wait until you approve each one, or all of them at once.',
+          'In automatic mode, **hold replies to 1 and 2 star reviews** is on by default, so an unhappy customer always gets a reply someone has read. Untick it to reply to every review automatically.',
+          '**Approve and post all** clears a backlog of drafts in one go. It never includes replies to 1 and 2 star reviews: those are approved one by one.',
+        ],
+      },
+      {
+        id: 'bad-review-alerts',
+        q: 'How do I hear about bad reviews?',
+        a: [
+          'When a check finds a new 1 or 2 star review written in the last 14 days, it shows at the top of the dashboard, on the business’s Reviews tab, and as a red dot beside the business in the sidebar, until you mark it as seen. Older reviews found the first time a business is linked do not raise alerts.',
+          'If the business has been pushed to GoHighLevel, the alert is also added to its contact there as a task due the next day, with a note carrying the review. Businesses not yet in GoHighLevel get the in-app alert only.',
+          'Alerts arrive when reviews are checked: hourly on our own Google connection, and whenever you press **Check for new reviews**.',
+        ],
+      },
+      {
+        id: 'score-history',
+        q: 'How is the weekly score recorded?',
+        a: [
+          'Once a week per business: the score for the week starting each Monday is kept up to date during the week, and each finished week keeps the score it ended on. The Overview tab shows the trend, under Everything we check, the dashboard shows the change since the week before under each score, and client reports include the weekly line once there are two weeks.',
+          'A change in the score can also come from the app seeing more of the profile, for example after linking a business to Google, not only from the profile improving.',
+        ],
+      },
+      {
+        id: 'photos-check',
+        q: 'How is the photos check worked out?',
+        a: [
+          'The app reads the photos the business itself has added to its Google profile, once a day and whenever you press **Re-read from Google**. Half the 4 points are for having 10 or more photos, half for adding one recently: full within 30 days, half within 90. Photos added by customers are counted in the note but do not score.',
+          'To add photos on a schedule, use the photo queue on the **Posts** tab.',
+        ],
+      },
+      {
+        id: 'qna-removed',
+        q: 'Where did the Q&A tab go?',
+        a: [
+          'Google shut down the Q&A API on 3 November 2025 and has been removing public questions and answers from Business Profiles since December 2025, so no app can post Q&A any more. The tab was removed. Answers customers look for now come from the profile itself, its reviews and its website, which is what the rest of the app improves.',
+        ],
+      },
+    ],
+  },
+  {
     title: 'Setup and troubleshooting',
     items: [
       {
@@ -290,6 +346,7 @@ export const FAQ: FaqSection[] = [
         a: [
           'The Business Profile API access request has not been approved yet. Until it is, Google gives the project a quota of **zero**, so the very first call fails with a quota error. Waiting and retrying will not clear it.',
           'To check, open Google Cloud, go to **APIs & Services** then **Quotas**, and filter for a Business Profile API. **0** requests per minute means not approved yet. **300** means you are live.',
+          'Access is granted per **project**, not per account, so check any older Google Cloud project first: one that already shows 300 may have been approved years ago. If it has, make an OAuth client inside that project and point **GOOGLE_CLIENT_ID** and **GOOGLE_CLIENT_SECRET** at it — that is what this app does.',
           'Businesses added by link work without API access. To use the Google features while you wait, see the next question.',
         ],
       },
@@ -297,12 +354,22 @@ export const FAQ: FaqSection[] = [
         id: 'pipedream',
         q: 'How do I use the Google features while Google reviews my API access?',
         a: [
+          'You no longer need to: since **25 September 2026** the app uses its own Google connection on an approved project, so Google features run without limits. Settings shows the connected accounts. What follows applies only if that access is ever lost and the borrowed connection has to come back — both Pipedream settings are still in .env.local, commented out.',
           'Borrow Pipedream’s approved Google connection. You connect your Google account once in a small Pipedream workflow, and the app fetches a short-lived Google token from it. Reviews, posts and profile edits then use Pipedream’s Google allowance instead of your project’s, which stays at zero until Google approves it.',
           'Setup takes about ten minutes and is written out step by step in **pipedream/SETUP.md** in the project folder. When it is done, open **Settings**, press **Test Google access**, then press **Sync from Google** on the dashboard.',
           'The first sync links each business you added by hand to its Google profile, matched by its Google place, and keeps its keywords, maps and reports. Nothing is duplicated.',
           'Pipedream\u2019s free plan allows **3 credits a day**, and each Google token costs one and lasts about an hour. So the app checks reviews and publishes posts and photos in two windows, at **9:00 and 14:00**, and keeps the third token for things you do yourself, like a sync or approving a reply. Settings shows how many are used today. Once all three are used, Google features wait until the daily reset.',
           'You can connect more than one Google account in Pipedream, for example one that manages a client’s profile. Each business then uses the login that manages it, and one Pipedream run fetches tokens for all of them, so it costs no extra credits. The steps are in **pipedream/SETUP.md** under Adding another Google account.',
           'Performance stats may not work through Pipedream, because its Google project may not have that API switched on. When Google approves your own access, remove **PIPEDREAM_TOKEN_URL** from .env.local and the app goes back to your own connection.',
+        ],
+      },
+      {
+        id: 'two-google-accounts',
+        q: 'My businesses are under two different Google accounts.',
+        a: [
+          'Connect both. A Business Profile can only be read with the Google account that manages it, so **Settings** keeps a list: press **Connect Google** for the first, then **Connect another account** for the next. Each business is then read and written with the sign-in that manages it, worked out automatically the first time the accounts are listed.',
+          'The sidebar shows how many accounts are connected. Disconnecting one leaves the others alone, and only affects the businesses it manages.',
+          { tip: 'If a business ever reports "Requested entity was not found", press **Sync from Google** on the dashboard: that relearns which account manages what.' },
         ],
       },
       {

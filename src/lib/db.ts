@@ -27,6 +27,21 @@ function init(): DatabaseSync {
       connected_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    -- One row per Google login the app has been given. A person can manage Business Profiles
+    -- under several Google accounts (Chao's twelve sit under two), and each account's locations
+    -- are only reachable with that account's own token -- so the app holds them all and picks by
+    -- the account a call names. The login is the sign-in email: what a person recognises in a list.
+    -- Supersedes google_connection above, whose single row is copied across on first run.
+    CREATE TABLE IF NOT EXISTS google_logins (
+      login TEXT PRIMARY KEY,              -- the account's email, lower case
+      name TEXT,
+      refresh_token TEXT NOT NULL,
+      access_token TEXT,
+      expires_at INTEGER NOT NULL DEFAULT 0,
+      scope TEXT,
+      connected_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS locations (
       id TEXT PRIMARY KEY,                 -- 'locations/123'
       account TEXT NOT NULL,               -- 'accounts/456' (v4 endpoints need both ids)
@@ -181,6 +196,7 @@ function init(): DatabaseSync {
     );
 
     -- Google Q&A seeded by the owner: question + answer, posted together.
+    -- Retired 2026-09-22 with Google's Q&A API; kept so old rows are not lost.
     CREATE TABLE IF NOT EXISTS qna (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
@@ -300,6 +316,44 @@ function init(): DatabaseSync {
       error TEXT
     );
 
+    -- One score per business per week (the Monday it starts). See history.ts.
+    CREATE TABLE IF NOT EXISTS usage_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      location_id TEXT,                      -- null for agency-wide work, such as prospecting
+      at TEXT NOT NULL DEFAULT (datetime('now')),
+      source TEXT NOT NULL,                  -- serper | ai
+      kind TEXT NOT NULL,                    -- the job it was spent on
+      credits REAL NOT NULL DEFAULT 0,       -- Serper credits
+      calls INTEGER NOT NULL DEFAULT 0,
+      tokens INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS usage_at ON usage_log (at);
+
+    CREATE TABLE IF NOT EXISTS score_history (
+      location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+      week TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      coverage INTEGER NOT NULL,
+      groups_json TEXT,
+      taken_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (location_id, week)
+    );
+
+    -- Things that need a person, such as a new 1 or 2 star review. See alerts.ts.
+    CREATE TABLE IF NOT EXISTS alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      ref TEXT NOT NULL,
+      title TEXT NOT NULL,
+      detail TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      seen_at TEXT,
+      ghl_status TEXT,
+      ghl_detail TEXT,
+      UNIQUE (kind, ref)
+    );
+
     CREATE TABLE IF NOT EXISTS job_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       job TEXT NOT NULL,
@@ -329,9 +383,33 @@ function init(): DatabaseSync {
     ['locations', 'next_keywords_at', 'TEXT'],
     ['locations', 'grid_monthly', 'INTEGER NOT NULL DEFAULT 0'],
     ['locations', 'next_grid_at', 'TEXT'],
+    ['locations', 'photos_count', 'INTEGER'],
+    ['locations', 'photos_customer_count', 'INTEGER'],
+    ['locations', 'photos_latest_at', 'TEXT'],
+    ['locations', 'photos_synced_at', 'TEXT'],
+    ['locations', 'hold_low_stars', 'INTEGER NOT NULL DEFAULT 1'],
+    // Where to centre a map when Google hands over no pin: worked out from the address once (see geo.ts).
+    ['locations', 'geo_json', 'TEXT'],
+    ['locations', 'geo_at', 'TEXT'],
   ] as const) {
     const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
     if (!cols.some(c => c.name === col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${ddl}`);
+  }
+
+  // The one-row google_connection became google_logins when a second Google account was needed.
+  // Carry the old row over so nobody has to reconnect, and leave it in place: it is harmless, and
+  // a database that has been through this migration reads correctly either way.
+  const old = db.prepare('SELECT * FROM google_connection WHERE id = 1').get() as
+    | { email: string | null; refresh_token: string; access_token: string | null; expires_at: number; scope: string | null; connected_at: string }
+    | undefined;
+  if (old?.refresh_token) {
+    db.prepare(
+      `INSERT INTO google_logins (login, name, refresh_token, access_token, expires_at, scope, connected_at)
+       VALUES (?,?,?,?,?,?,?) ON CONFLICT(login) DO NOTHING`,
+    ).run(
+      (old.email ?? 'default').toLowerCase(), old.email, old.refresh_token,
+      old.access_token, old.expires_at, old.scope, old.connected_at,
+    );
   }
   return db;
 }

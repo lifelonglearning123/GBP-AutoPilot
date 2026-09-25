@@ -23,7 +23,7 @@ export default function SitePanel({ locationId, website, ready, planned, existin
             Home, contact, {planned.services} service pages, {planned.areas} area pages and {planned.combos} service × area pages
             ({planned.total} total). Each page gets LocalBusiness, Service, FAQ and breadcrumb schema plus a Get Directions button.
           </p>
-          {!ready && <div className="text-sm" style={{ color: 'var(--warn)' }}>Add services and areas on the Configure tab first.</div>}
+          {!ready && <div className="text-sm" style={{ color: 'var(--warn)' }}>Add services and areas on the Settings tab first.</div>}
           <div>
             <Action action="site.generate" params={{ id: locationId }} className="btn primary" busy={`Writing ${planned.total} pages… (about ${Math.ceil(planned.total / 4) * 20}s)`} disabled={!ready}
               confirm={existing.total ? 'Regenerate every page? Existing content will be replaced.' : undefined}>

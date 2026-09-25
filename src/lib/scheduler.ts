@@ -4,7 +4,9 @@ import { hasLLM } from './llm';
 import { locations, isLinked } from './locations';
 import { poll } from './reviews';
 import { runWeekly } from './posts';
-import { runPhotoSchedule, syncMetrics } from './extras';
+import { runPhotoSchedule, syncMetrics, syncPhotos } from './extras';
+import { recordWeeklyScores } from './history';
+import { withUsage } from './usage';
 import { due as keywordsDue, runKeywords } from './keywords';
 import { gridDue, rerunLast } from './grid';
 
@@ -16,6 +18,12 @@ import { gridDue, rerunLast } from './grid';
 export const REVIEW_POLL_MINUTES = 60;
 /** Through Pipedream every token costs a credit, so reviews are checked once per window instead. */
 export const PIPEDREAM_REVIEW_POLL_MINUTES = 180;
+/**
+ * After a daily read (stats, photos) fails for a business, the scheduler leaves it this long before
+ * trying again. Without it a profile Google refuses was retried, and logged, every five minutes, and
+ * in Pipedream mode its retry could spend a token on its own. A manual tick always retries.
+ */
+export const RETRY_AFTER_FAIL_MINUTES = 360;
 
 export async function tick(opts: { manual?: boolean } = {}): Promise<string[]> {
   // On globalThis, not in this module: after a code change a fresh copy of this module is loaded,
@@ -24,22 +32,32 @@ export async function tick(opts: { manual?: boolean } = {}): Promise<string[]> {
   globalThis.__gbpTickRunning = true;
   const out: string[] = [];
   try {
+    // The weekly score is recorded whatever else happens; it needs no Google call.
+    try { const n = recordWeeklyScores(); if (n) out.push(`weekly score recorded for ${n} business${n === 1 ? '' : 'es'}`); }
+    catch (e: any) { out.push(`score history error ${e.message}`); log('history', 'error', e.message); }
     if (!hasLLM()) { out.push('skipped: no LLM key'); return out; }
     const now = Date.now();
+    type Loc = ReturnType<typeof locations>[number];
+    const failures = (globalThis.__gbpFailures ??= new Map<string, number>());
+    const resting = (job: string, l: Loc) => !opts.manual && now - (failures.get(`${job}:${l.id}`) ?? 0) < RETRY_AFTER_FAIL_MINUTES * 60_000;
+    const outcome = (job: string, l: Loc, ok: boolean) => { if (ok) failures.delete(`${job}:${l.id}`); else failures.set(`${job}:${l.id}`, now); };
+    const photosDue = (l: Loc) => !resting('photos', l) && now - (l.photos_synced_at ? new Date(l.photos_synced_at + 'Z').getTime() : 0) > 24 * 60 * 60_000;
+    const metricsDue = (l: Loc) => !resting('metrics', l) && now - (l.metrics_synced_at ? new Date(l.metrics_synced_at).getTime() : 0) > 24 * 60 * 60_000;
     const pollMinutes = viaPipedream() ? PIPEDREAM_REVIEW_POLL_MINUTES : REVIEW_POLL_MINUTES;
     const reviewsDue = (l: ReturnType<typeof locations>[number]) =>
       now - (l.last_review_poll ? new Date(l.last_review_poll + 'Z').getTime() : 0) > pollMinutes * 60_000;
     const googleDue = locations().filter(isLinked).some(l =>
       reviewsDue(l) ||
       (l.next_post_at && new Date(l.next_post_at).getTime() <= now) ||
-      now - (l.metrics_synced_at ? new Date(l.metrics_synced_at).getTime() : 0) > 24 * 60 * 60_000);
+      metricsDue(l) ||
+      photosDue(l));
     // Only ask for Google access when something is due: through Pipedream each token costs a credit.
     const google = googleDue ? await googleReady(opts.manual ? 'manual' : 'scheduler') : { ok: true as boolean, why: undefined as string | undefined };
     if (!google.ok) out.push(`Google jobs waiting: ${google.why}`);
     for (const l of locations()) {
       // Weekly search check: tracked clients, linked or hand-added; prospects are created with it off.
       if (keywordsDue(l)) {
-        try { const s = await runKeywords(l.id); out.push(`${l.title}: searches checked, share ${s.visibility}%`); }
+        try { const s = await withUsage(l.id, 'searches', () => runKeywords(l.id)); out.push(`${l.title}: searches checked, share ${s.visibility}%`); }
         catch (e: any) { out.push(`${l.title}: search check error ${e.message}`); }
       }
       // Monthly map re-check, only where switched on; it starts in the background and is not awaited.
@@ -49,19 +67,22 @@ export async function tick(opts: { manual?: boolean } = {}): Promise<string[]> {
       }
       if (!isLinked(l) || !google.ok) continue;
       if (reviewsDue(l)) {
-        try { const r = await poll(l.id); out.push(`${l.title}: reviews ${r.fetched} fetched, ${r.posted} replied`); }
+        try { const r = await withUsage(l.id, 'review replies', () => poll(l.id)); out.push(`${l.title}: reviews ${r.fetched} fetched, ${r.posted} replied`); }
         catch (e: any) { out.push(`${l.title}: reviews error ${e.message}`); log('reviews', 'error', e.message, l.id); }
       }
       if (l.next_post_at && new Date(l.next_post_at).getTime() <= now) {
-        try { out.push(`${l.title}: post ${await runWeekly(l)}`); }
+        try { out.push(`${l.title}: post ${await withUsage(l.id, 'weekly post', () => runWeekly(l))}`); }
         catch (e: any) { out.push(`${l.title}: post error ${e.message}`); log('post', 'error', e.message, l.id); }
       }
       try { const r = await runPhotoSchedule(l); if (r) out.push(`${l.title}: ${r}`); }
       catch (e: any) { out.push(`${l.title}: photo error ${e.message}`); }
-      const lastMetrics = l.metrics_synced_at ? new Date(l.metrics_synced_at).getTime() : 0;
-      if (now - lastMetrics > 24 * 60 * 60_000) {
-        try { await syncMetrics(l.id); out.push(`${l.title}: metrics synced`); }
-        catch (e: any) { out.push(`${l.title}: metrics error ${e.message}`); log('metrics', 'error', e.message, l.id); }
+      if (metricsDue(l)) {
+        try { await syncMetrics(l.id); outcome('metrics', l, true); out.push(`${l.title}: metrics synced`); }
+        catch (e: any) { outcome('metrics', l, false); out.push(`${l.title}: metrics error ${e.message}`); log('metrics', 'error', e.message, l.id); }
+      }
+      if (photosDue(l)) {
+        try { const p = await syncPhotos(l.id); outcome('photos', l, true); out.push(`${l.title}: ${p.count} photos`); }
+        catch (e: any) { outcome('photos', l, false); out.push(`${l.title}: photos error ${e.message}`); log('photos', 'error', e.message, l.id); }
       }
     }
   } finally {
@@ -75,6 +96,8 @@ declare global {
   var __gbpScheduler: NodeJS.Timeout | undefined;
   // eslint-disable-next-line no-var
   var __gbpTickRunning: boolean | undefined;
+  // eslint-disable-next-line no-var
+  var __gbpFailures: Map<string, number> | undefined;
 }
 
 /**

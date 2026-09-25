@@ -69,7 +69,7 @@ export default function ConfigForm({ l }: Props) {
         <div>
           <label className="field">Areas served (towns, one per line)</label>
           <textarea value={areas} onChange={e => setAreas(e.target.value)} rows={6} placeholder={l.town ? `${l.town}\nHarpenden\nHatfield` : 'St Albans\nHarpenden'} />
-          <div className="text-xs muted mt-1">These drive the service × area pages. Real coverage only: Google filters pages for towns you do not serve.</div>
+          <div className="text-xs muted mt-1">These make the service and town pages on the Website tab. List only towns the business really covers.</div>
         </div>
         <div>
           <label className="field">Brand voice</label>
@@ -80,21 +80,22 @@ export default function ConfigForm({ l }: Props) {
       <section className="flex flex-col gap-5">
         <div className="panel p-5 flex flex-col gap-3">
           <h2 className="font-semibold">Automation</h2>
-          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={autoReply} onChange={e => setAutoReply(e.target.checked)} /> Auto-reply to new reviews (hourly poll, posts without approval)</label>
-          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={scheduled} onChange={e => setScheduled(e.target.checked)} /> Weekly Google Post</label>
+          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={autoReply} onChange={e => setAutoReply(e.target.checked)} /> Reply to new reviews automatically</label>
+          <p className="text-xs muted pl-7 -mt-1">Checked every hour. How replies are handled, and whether 1 and 2 star ones wait for you, is set on the Reviews tab.</p>
+          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={scheduled} onChange={e => setScheduled(e.target.checked)} /> Publish a post every week</label>
           <div className="grid grid-cols-2 gap-3 pl-7">
             <div><label className="field">Day</label><select value={weekday} onChange={e => setWeekday(Number(e.target.value))}>{DAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}</select></div>
             <div><label className="field">Hour (local)</label><input type="number" min={0} max={23} value={hour} onChange={e => setHour(Number(e.target.value))} /></div>
           </div>
-          <label className="flex items-center gap-3 text-sm pl-7"><input type="checkbox" checked={autoPost} onChange={e => setAutoPost(e.target.checked)} /> Publish automatically (otherwise it waits as a draft)</label>
-          <div className="flex items-center gap-3 text-sm">Release a queued photo every <input type="number" min={1} max={90} value={photoDays} onChange={e => setPhotoDays(Number(e.target.value))} style={{ width: 70 }} /> days</div>
-          <div className="text-xs muted">Jobs run while this app is open. A missed slot runs at the next start.</div>
+          <label className="flex items-center gap-3 text-sm pl-7"><input type="checkbox" checked={autoPost} onChange={e => setAutoPost(e.target.checked)} /> Send it to Google without asking me (otherwise it waits as a draft)</label>
+          <div className="flex items-center gap-3 text-sm">Post one photo from the queue every <input type="number" min={1} max={90} value={photoDays} onChange={e => setPhotoDays(Number(e.target.value))} style={{ width: 70 }} /> days</div>
+          <div className="text-xs muted">These run while the app is open on this PC. A slot that is missed runs the next time it starts.</div>
         </div>
 
         <div className="panel p-5 flex flex-col gap-3">
           <h2 className="font-semibold">Website output</h2>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="field">Folder / slug</label><input type="text" value={slug} onChange={e => setSlug(e.target.value)} /></div>
+            <div><label className="field">Folder name for the pages</label><input type="text" value={slug} onChange={e => setSlug(e.target.value)} /></div>
             <div><label className="field">Brand colour</label><input type="text" value={colour} onChange={e => setColour(e.target.value)} /></div>
           </div>
         </div>

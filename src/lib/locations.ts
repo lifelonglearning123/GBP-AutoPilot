@@ -16,6 +16,9 @@ export type LocationRow = {
   benchmark_json: string | null; benchmark_at: string | null; benchmark_query: string | null;
   keywords_weekly: number; next_keywords_at: string | null;
   grid_monthly: number; next_grid_at: string | null;
+  photos_count: number | null; photos_customer_count: number | null; photos_latest_at: string | null; photos_synced_at: string | null;
+  geo_json: string | null; geo_at: string | null;
+  hold_low_stars: number;
   created_at: string;
 };
 
@@ -87,6 +90,8 @@ export function upsertFromGoogle(account: string, g: GLocation) {
   if (existing) {
     const sets = Object.keys(cols).map(k => `${k} = ?`).join(', ');
     run(`UPDATE locations SET ${sets}, account = ?, synced_at = datetime('now') WHERE id = ?`, ...Object.values(cols), account, g.name);
+    // A new address means the position worked out from the old one is wrong; the next map view redoes it.
+    if (existing.address_json !== cols.address_json) run(`UPDATE locations SET geo_json = NULL, geo_at = NULL WHERE id = ?`, g.name);
   } else {
     const keys = Object.keys(cols);
     run(
@@ -145,10 +150,14 @@ export async function resync(id: string) {
   return location(id)!;
 }
 
-export type Config = Partial<Pick<LocationRow, 'brand_voice' | 'offered_services' | 'service_areas' | 'site_slug' | 'site_colour' | 'auto_reply' | 'auto_post' | 'post_weekday' | 'post_hour' | 'next_post_at' | 'ghl_contact_id' | 'ghl_pushed_at' | 'report_url' | 'photo_every_days' | 'next_photo_at' | 'metrics_synced_at' | 'keywords_weekly' | 'next_keywords_at' | 'grid_monthly' | 'next_grid_at'>>;
+export type Config = Partial<Pick<LocationRow, 'brand_voice' | 'offered_services' | 'service_areas' | 'site_slug' | 'site_colour' | 'auto_reply' | 'auto_post' | 'post_weekday' | 'post_hour' | 'next_post_at' | 'ghl_contact_id' | 'ghl_pushed_at' | 'report_url' | 'photo_every_days' | 'next_photo_at' | 'metrics_synced_at' | 'keywords_weekly' | 'next_keywords_at' | 'grid_monthly' | 'next_grid_at' | 'hold_low_stars'>>;
+
+/** Columns a config update may touch. Keys come from the browser, so anything else is ignored. */
+const CONFIG_KEYS = new Set(['brand_voice', 'offered_services', 'service_areas', 'site_slug', 'site_colour', 'auto_reply', 'auto_post', 'post_weekday', 'post_hour', 'next_post_at',
+  'ghl_contact_id', 'ghl_pushed_at', 'report_url', 'photo_every_days', 'next_photo_at', 'metrics_synced_at', 'keywords_weekly', 'next_keywords_at', 'grid_monthly', 'next_grid_at', 'hold_low_stars']);
 
 export function updateConfig(id: string, cfg: Config) {
-  const keys = Object.keys(cfg) as (keyof Config)[];
+  const keys = (Object.keys(cfg) as (keyof Config)[]).filter(k => CONFIG_KEYS.has(k));
   if (!keys.length) return;
   run(`UPDATE locations SET ${keys.map(k => `${k} = ?`).join(', ')} WHERE id = ?`, ...keys.map(k => cfg[k] ?? null), id);
 }
@@ -187,6 +196,7 @@ export function saveManual(input: ManualInput, id?: string): LocationRow {
     const existing = location(id);
     if (!existing || isLinked(existing)) throw new Error('Only manual businesses can be edited here');
     run(`UPDATE locations SET ${Object.keys(cols).map(k => `${k} = ?`).join(', ')} WHERE id = ?`, ...Object.values(cols), id);
+    if (existing.address_json !== cols.address_json) run(`UPDATE locations SET geo_json = NULL, geo_at = NULL WHERE id = ?`, id);
     return location(id)!;
   }
   const newId = `${MANUAL_ACCOUNT}/${slugify(title)}-${Math.random().toString(36).slice(2, 6)}`;

@@ -3,6 +3,9 @@ node_modules/
 data/
 output/
 .env.local
+# Backups of it are just as secret (scripts write .env.local.bak before editing).
+.env.local.*
+.env*.bak
 *.tsbuildinfo
 next-env.d.ts
 
@@ -11,3 +14,7 @@ pipedream/.deployed.json
 
 # Client documents dropped in the project root (audits, reports)
 /*.pdf
+
+# The hosted platform is its own git repository (github.com/lifelonglearning123/gbp-platform)
+# that happens to live in this folder. Commit it from inside platform/.
+/platform/

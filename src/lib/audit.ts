@@ -91,7 +91,16 @@ export function audit(l: LocationRow): { score: number; items: AuditItem[]; sour
   add('website', 'Website', 'Basics', v.website ? 1 : 0, v.website ? 'Linked from the profile.' : 'No website on the profile, so Google has less to confirm the business against.', 'manual');
   add('address', 'Address or service area', 'Basics', v.address.postalCode || (l.service_area_json && l.service_area_json !== 'null') ? 1 : 0,
     'Storefront address, or a service area for businesses that travel to customers.', 'manual');
-  add('latlng', 'Map pin', 'Basics', v.latlng?.latitude ? 1 : 0, seesProfile ? 'Set.' : NO_LISTING, 'manual', seesProfile);
+  // Google only reports a pin that someone placed by hand on the Google Business Profile website
+  // (the field "can only be updated by approved clients" and is dropped when the address geocodes).
+  // A business on Google's own automatic pin is not doing anything wrong, so the check is scored only
+  // when a hand-placed pin exists, and is left unscored otherwise rather than counted as a failure.
+  const pinned = Boolean(v.latlng?.latitude);
+  add('latlng', 'Map pin', 'Basics', pinned ? 1 : 0,
+    !seesProfile ? NO_LISTING
+      : pinned ? 'Placed by hand, so customers are sent to the exact spot.'
+      : 'Google places this one from the address. It is worth a look on Maps: if the marker is on the wrong door or unit, move it on the Google Business Profile website.',
+    'manual', seesProfile && pinned);
   add('primary_category', 'Primary category', 'Basics', v.primaryCategory?.name ? 1 : 0,
     seesProfile ? `${v.primaryCategory?.displayName ?? 'None'}.` : NO_LISTING, 'llm', seesProfile);
   add('place_id', 'Verified and live', 'Basics', v.place_id ? 1 : 0,
@@ -159,8 +168,21 @@ export function audit(l: LocationRow): { score: number; items: AuditItem[]; sour
   const svc = v.serviceNames.length;
   add('services', 'Services list', 'Profile', svc / 8,
     seesPrivate ? `${svc} services listed. Each one is a phrase Google matches against searches.` : hiddenPrivate, 'llm', seesPrivate);
-  add('photos', 'Photos (10+, added monthly)', 'Profile', 0,
-    'Not readable through any API this app uses; check the Photos tab on the profile.', 'manual', false);
+  if (seesPrivate && l.photos_synced_at) {
+    // Half the points for having 10 or more, half for adding one recently (full within 30 days).
+    const n = l.photos_count ?? 0;
+    const days = l.photos_latest_at ? (Date.now() - Date.parse(l.photos_latest_at)) / 86_400_000 : Infinity;
+    const recent = days <= 30 ? 1 : days <= 90 ? 0.5 : 0;
+    const ago = !Number.isFinite(days) ? '' : days < 1 ? 'today' : days < 14 ? `${Math.round(days)} days ago` : days < 60 ? `${Math.round(days / 7)} weeks ago` : `${Math.round(days / 30)} months ago`;
+    const cust = l.photos_customer_count ? `, plus ${l.photos_customer_count} from customers` : '';
+    add('photos', 'Photos (10+, added monthly)', 'Profile', 0.5 * Math.min(1, n / 10) + 0.5 * recent,
+      n === 0 ? `No photos added by the business yet${cust}. Add at least 10: outside, inside, the team and finished work.`
+        : `${n} photo${n === 1 ? '' : 's'} added by the business${cust}; the newest ${ago}. Aim for 10 or more and a new one every month.`,
+      'api', true);
+  } else {
+    add('photos', 'Photos (10+, added monthly)', 'Profile', 0,
+      seesPrivate ? 'Not read yet. Photos are read with the daily checks, or press Re-read from Google.' : hiddenPrivate, 'api', false);
+  }
 
   // ---------------- Activity ----------------
   const lastPost = one<{ posted_at: string }>(`SELECT posted_at FROM posts WHERE location_id = ? AND status = 'posted' ORDER BY posted_at DESC LIMIT 1`, l.id);
@@ -173,7 +195,7 @@ export function audit(l: LocationRow): { score: number; items: AuditItem[]; sour
   const cit = one<{ found: number; mismatches: number }>('SELECT found, mismatches FROM citation_runs WHERE location_id = ? ORDER BY id DESC LIMIT 1', l.id);
   add('nap', 'Name, address and phone consistent across the web', 'Consistency',
     cit && cit.found ? ((cit.found - cit.mismatches) / cit.found) * Math.min(1, cit.found / 8) : 0,
-    !cit ? 'Run the citation audit on the Citations tab.'
+    !cit ? 'Not checked yet: the other places this business is listed have not been looked at.'
       : `${cit.found} listings found, ${cit.mismatches} showing a different name, address or phone.` +
         (cit.found < 8 ? ' Few listings exist, so there is little for Google to cross-check.' : ''),
     'api', Boolean(cit));

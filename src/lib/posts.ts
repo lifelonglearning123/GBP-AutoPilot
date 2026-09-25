@@ -71,8 +71,11 @@ Return JSON: { "summary": string, "cta": "LEARN_MORE" | "CALL" | "BOOK", "photo_
   return post(Number(r.lastInsertRowid))!;
 }
 
+/** The fields a person can edit on a draft. The patch comes from the browser, so its keys become column names only if listed here. */
+const EDITABLE = new Set(['summary', 'cta_type', 'cta_url', 'media_url']);
+
 export function edit(id: number, patch: Partial<Pick<PostRow, 'summary' | 'cta_type' | 'cta_url' | 'media_url'>>) {
-  const keys = Object.keys(patch) as (keyof typeof patch)[];
+  const keys = (Object.keys(patch ?? {}) as (keyof typeof patch)[]).filter(k => EDITABLE.has(k));
   if (!keys.length) return;
   run(`UPDATE posts SET ${keys.map(k => `${k} = ?`).join(', ')} WHERE id = ? AND status = 'draft'`, ...keys.map(k => patch[k] ?? null), id);
 }
@@ -81,6 +84,8 @@ export function reject(id: number) { run(`UPDATE posts SET status = 'rejected' W
 export async function publish(id: number): Promise<PostRow> {
   const p = post(id);
   if (!p) throw new Error('Unknown post');
+  // Google makes a new post on every call, so an old tab or a second press must not post it twice.
+  if (p.status === 'posted') throw new Error('This post is already on Google.');
   const l = location(p.location_id)!;
   const body: GLocalPost = { languageCode: l.language_code ?? 'en-GB', summary: p.summary, topicType: 'STANDARD' };
   if (p.cta_type === 'CALL') body.callToAction = { actionType: 'CALL' };

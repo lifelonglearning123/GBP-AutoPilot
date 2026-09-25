@@ -3,21 +3,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
-  ['', 'Audit & fill'],
+  ['', 'Overview'],
   ['/reviews', 'Reviews'],
   ['/posts', 'Posts'],
   ['/site', 'Website'],
   ['/competitors', 'Competitors'],
   ['/map', 'Map'],
-  ['/citations', 'Citations'],
-  ['/qna', 'Q&A'],
-  ['/config', 'Configure'],
+  ['/citations', 'Listings'],
+  ['/config', 'Settings'],
 ];
 
 export default function Tabs({ base }: { base: string }) {
   const path = usePathname();
   return (
-    <div className="flex gap-1 border-b pb-2" style={{ borderColor: 'var(--line)' }}>
+    <div className="flex flex-wrap gap-1 border-b pb-2" style={{ borderColor: 'var(--line)' }}>
       {TABS.map(([suffix, label]) => {
         const href = base + suffix;
         const active = suffix === '' ? path === base : path.startsWith(href);

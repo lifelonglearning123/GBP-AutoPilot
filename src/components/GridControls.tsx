@@ -15,9 +15,11 @@ const CREDITS_PER_POINT = 3;
  * Choose the grid and the searches, see the cost before running, run in the background with a
  * progress bar (the page refreshes itself while it runs), and switch on a monthly re-map.
  */
-export default function GridControls({ id, keywords, running, progress, monthly, last, hasSerper, hasPin }: {
+export default function GridControls({ id, keywords, running, progress, monthly, last, hasSerper, hasPin, centredOn = null }: {
   id: string; keywords: Kw[]; running: boolean; progress: { done: number; total: number } | null; monthly: boolean;
   last: { size: number; radius: number; keywordIds: number[]; withTown: boolean } | null; hasSerper: boolean; hasPin: boolean;
+  /** What the centre of the map is based on, when it is not the Google pin. */
+  centredOn?: string | null;
 }) {
   const [size, setSize] = useState(last?.size ?? 5);
   const [radius, setRadius] = useState(last?.radius ?? 2);
@@ -64,7 +66,14 @@ export default function GridControls({ id, keywords, running, progress, monthly,
         <strong>Map grid.</strong>{' '}
         <span className="muted">Checks this business’s position from a grid of points around it, as if a customer at each point searched Google Maps. Google ranks by distance as well as by profile, so this shows where customers can still find it.</span>
       </div>
-      {!hasPin && <div className="text-sm" style={{ color: 'var(--warn)' }}>This business has no map pin yet. Link it to its Google listing first.</div>}
+      {!hasPin && (
+        <div className="text-sm" style={{ color: 'var(--warn)' }}>
+          No position for this business yet: Google gives no map pin, and the address could not be placed. Add a fuller address on the Settings tab.
+        </div>
+      )}
+      {hasPin && centredOn && centredOn !== 'the map pin on the Google profile' && (
+        <p className="text-xs muted">Centred on {centredOn}, because Google shares a pin only when someone has placed one by hand.</p>
+      )}
       <div className="flex flex-wrap items-end gap-4">
         <div>
           <label className="field">Grid</label>

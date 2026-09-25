@@ -1,6 +1,7 @@
 import { run, parse, log } from './db';
 import { location, isLinked, type LocationRow } from './locations';
 import { normPhone, normPostcode, normName, hostOf, POSTCODE_RE } from './nap';
+import { meter, CREDITS } from './usage';
 
 /**
  * The public Google listing for a business, read through Serper (no Business Profile API needed).
@@ -50,6 +51,7 @@ export type Candidate = Listing & { score: number; reasons: string[] };
 async function serper<T = any>(path: string, body: Record<string, unknown>): Promise<T> {
   const key = process.env.SERPER_API_KEY?.trim();
   if (!key) throw new Error('SERPER_API_KEY is not set in .env.local, so the public Google listing cannot be read.');
+  meter('serper', { credits: CREDITS[path] ?? 1, kind: 'public listing' });
   const res = await fetch(`${SERPER}/${path}`, {
     method: 'POST', headers: { 'X-API-KEY': key, 'Content-Type': 'application/json' },
     body: JSON.stringify({ gl: 'gb', hl: 'en', ...body }),

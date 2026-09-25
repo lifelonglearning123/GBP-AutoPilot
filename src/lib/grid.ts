@@ -1,7 +1,10 @@
 import { all, one, run, parse, log } from './db';
 import { location, view, updateConfig, type LocationRow } from './locations';
 import { isSelf } from './benchmark';
+import { storedCentre, type Centre } from './geo';
+import { withUsage } from './usage';
 import { visibilityPoints, type KeywordRow } from './keywords';
+import { meter, CREDITS } from './usage';
 
 /**
  * Map grid: rank checked from a grid of points around the business, for each chosen search, as if a
@@ -121,6 +124,7 @@ async function mapsAt(q: string, lat: number, lng: number, zoom: number, counter
     if (wait) await new Promise(r => setTimeout(r, wait));
     try {
       counter.calls++;
+      meter('serper', { credits: CREDITS.maps, kind: 'map grid' });
       const res = await fetch(`${SERPER}/maps`, {
         method: 'POST', headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ q, ll: `@${lat.toFixed(6)},${lng.toFixed(6)},${zoom}z`, gl: 'gb', hl: 'en' }),
@@ -186,9 +190,9 @@ declare global {
 }
 const running = globalThis.__gbpGridRuns ?? (globalThis.__gbpGridRuns = new Set<number>());
 
-export function centre(l: LocationRow): { lat: number; lng: number } | null {
-  const ll = view(l).latlng;
-  return ll?.latitude != null && ll?.longitude != null ? { lat: ll.latitude, lng: ll.longitude } : null;
+/** Where the map is centred: the Google pin when there is one, else the position worked out from the address. */
+export function centre(l: LocationRow): Centre | null {
+  return storedCentre(l);
 }
 
 export function estimate(size: number, keywords: number) {
@@ -202,7 +206,7 @@ export function startGrid(locationId: string, opts: { size: number; radiusMi: nu
   if (!l) throw new Error('Unknown location');
   if (!process.env.SERPER_API_KEY) throw new Error('SERPER_API_KEY is not set, so the map cannot be checked.');
   const c = centre(l);
-  if (!c) throw new Error('This business has no map pin yet. Link it to its Google listing first.');
+  if (!c) throw new Error('This business has no position yet: Google gives no map pin, and the address could not be placed. Add a fuller address on the Settings tab, then try again.');
   const size = SIZES.includes(opts.size as any) ? opts.size : 5;
   const radiusMi = RADII.includes(opts.radiusMi as any) ? opts.radiusMi : 2;
   const kws = opts.keywordIds.map(id => one<KeywordRow>('SELECT * FROM keywords WHERE id = ? AND location_id = ?', id, locationId)).filter(Boolean) as KeywordRow[];
@@ -219,7 +223,8 @@ export function startGrid(locationId: string, opts: { size: number; radiusMi: nu
   const runId = Number(r.lastInsertRowid);
   running.add(runId);
 
-  (async () => {
+  // The run carries on in the background; withUsage keeps its spend against this business.
+  withUsage(locationId, 'map grid', () => (async () => {
     const counter: Counter = { calls: 0 };
     const jobs = kws.flatMap(k => points.map(p => ({ k, p, query: opts.withTown ? k.phrase : phoneQuery(k.phrase, town) })));
     let i = 0, done = 0;
@@ -256,7 +261,7 @@ export function startGrid(locationId: string, opts: { size: number; radiusMi: nu
     } finally {
       running.delete(runId);
     }
-  })();
+  })());
   return { runId };
 }
 

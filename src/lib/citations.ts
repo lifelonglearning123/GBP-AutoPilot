@@ -5,6 +5,7 @@ import { isMock } from './gbp';
 import { MOCK_CITATION_PAGES } from './mock';
 import { normPhone, decodeEntities } from './nap';
 import { ensureFresh } from './public';
+import { meter, CREDITS } from './usage';
 
 /**
  * NAP citation audit (rule 3). Search the web for the business, pull every page that mentions
@@ -97,6 +98,7 @@ type Hit = { link: string; title: string; snippet: string };
 async function serper(q: string): Promise<Hit[]> {
   const key = process.env.SERPER_API_KEY?.trim();
   if (!key) throw new Error('SERPER_API_KEY is not set in .env.local (serper.dev, 2,500 free searches).');
+  meter('serper', { credits: CREDITS.search, kind: 'listings audit' });
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST', headers: { 'X-API-KEY': key, 'Content-Type': 'application/json' },
     body: JSON.stringify({ q, gl: 'gb', hl: 'en', num: 10 }),

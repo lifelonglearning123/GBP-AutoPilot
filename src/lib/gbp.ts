@@ -1,4 +1,4 @@
-import { accessToken, viaPipedream, dropBorrowedToken, googleLogins, rememberAccountLogin } from './gauth';
+import { accessToken, viaPipedream, dropBorrowedToken, googleLogins, pruneAccountLogins, rememberAccountLogin } from './gauth';
 import { setSetting, run } from './db';
 import { MOCK_ACCOUNTS, MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_REVIEWS } from './mock';
 
@@ -133,12 +133,14 @@ export type GLocation = Record<string, any> & { name: string; title: string };
 export async function listAccounts(): Promise<GAccount[]> {
   if (isMock()) return MOCK_ACCOUNTS;
   // Each Google login sees its own Business Profile accounts; remember which login manages which,
-  // so later calls for that account or its locations use the right token.
+  // so later calls for that account or its locations use the right token. Anything the map still
+  // claims for a login we no longer hold is dropped first, so a sync repairs it (see gauth.ts).
+  pruneAccountLogins();
   const out: GAccount[] = [];
   for (const { login } of await googleLogins()) {
     let pageToken = '';
     do {
-      const j = await call<{ accounts?: GAccount[]; nextPageToken?: string }>(`${AM}/accounts?pageSize=20${pageToken ? `&pageToken=${pageToken}` : ''}`, {}, { login });
+      const j = await call<{ accounts?: GAccount[]; nextPageToken?: string }>(`${AM}/accounts?pageSize=20${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`, {}, { login });
       for (const a of j.accounts ?? []) {
         if (out.some(x => x.name === a.name)) continue;
         out.push(a);
@@ -308,18 +310,38 @@ export async function createPhoto(account: string, location: string, sourceUrl: 
   });
 }
 
-// ---------- Q&A (mybusinessqanda v1) ----------
+// ---------- photos (v4 media) ----------
 
-const QA = 'https://mybusinessqanda.googleapis.com/v1';
+export type GMedia = { name: string; mediaFormat?: string; createTime?: string; locationAssociation?: { category?: string } };
 
-/** Owner-seeded question with the owner's answer. Two calls: create the question, then upsert the answer. */
-export async function createQuestionWithAnswer(location: string, question: string, answer: string): Promise<{ name: string }> {
-  assertLinked(location, 'post Q&A');
-  if (isMock()) return { name: `${location}/questions/mock-${Date.now()}` };
-  const q = await call<{ name: string }>(`${QA}/${location}/questions`, { method: 'POST', body: JSON.stringify({ text: question }) });
-  await call(`${QA}/${q.name}/answers:upsert`, { method: 'POST', body: JSON.stringify({ answer: { text: answer } }) });
-  return q;
+/** Photos and videos the business itself has added, and the total Google reports. */
+export async function listMedia(account: string, location: string): Promise<{ items: GMedia[]; total: number }> {
+  assertLinked(account, 'read photos');
+  if (isMock()) {
+    const items = Array.from({ length: 7 }, (_, i) => ({ name: `media/mock-${i}`, mediaFormat: 'PHOTO', createTime: new Date(Date.now() - (i * 20 + 12) * 86_400_000).toISOString() }));
+    return { items, total: items.length };
+  }
+  const out: GMedia[] = [];
+  let total = 0, pageToken = '';
+  do {
+    const j = await call<{ mediaItems?: GMedia[]; totalMediaItemCount?: number; nextPageToken?: string }>(
+      `${V4}/${v4Name(account, location)}/media?pageSize=100${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`);
+    out.push(...(j.mediaItems ?? []));
+    total = j.totalMediaItemCount ?? out.length;
+    pageToken = j.nextPageToken ?? '';
+  } while (pageToken && out.length < 500);
+  return { items: out, total };
 }
+
+/** How many photos customers have added (Google counts them separately). */
+export async function customerMediaCount(account: string, location: string): Promise<number> {
+  if (isMock()) return 3;
+  const j = await call<{ totalMediaItemCount?: number; mediaItems?: unknown[] }>(`${V4}/${v4Name(account, location)}/media/customers?pageSize=1`);
+  return j.totalMediaItemCount ?? j.mediaItems?.length ?? 0;
+}
+
+// Q&A: Google retired the Q&A API on 3 November 2025 and removed public Q&A from profiles, so the
+// app no longer seeds or posts questions (the old `qna` table is kept, unused).
 
 // ---------- Performance (businessprofileperformance v1) ----------
 

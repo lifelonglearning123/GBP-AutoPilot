@@ -13,6 +13,7 @@ import { pages, matrix } from './site';
 import { agency } from './agency';
 import { ensureFresh, snapshot } from './public';
 import { hostOf } from './nap';
+import { scoreHistory, trendSvg, weekLabel, type WeekScore } from './history';
 
 /**
  * The prospect report: one self-contained HTML page a business owner can read on a phone.
@@ -23,6 +24,8 @@ export type ReportData = {
   generatedAt: string;
   business: { title: string; category: string; addressLine: string; phone: string; website: string; town: string; linked: boolean };
   score: number;
+  /** Weekly scores, oldest first (up to 12 weeks). */
+  history: WeekScore[];
   /** Share of the checklist weight the app could actually see; the rest is "not checked". */
   coverage: number;
   /** Where the Google-side facts came from, stated on the report so nobody reads guesses as findings. */
@@ -130,6 +133,7 @@ export async function build(locationId: string): Promise<{ data: ReportData; htm
     generatedAt: new Date().toISOString(),
     business: { title: v.title, category: v.primaryCategory?.displayName ?? '', addressLine: v.addressLine, phone: v.phone ?? '', website: v.website ?? '', town: v.town, linked: isLinked(l) },
     score,
+    history: scoreHistory(l.id, 12),
     coverage,
     source: {
       kind: source,
@@ -221,6 +225,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:.
 <p class="sub">${esc([d.business.category, d.business.addressLine, d.business.phone].filter(Boolean).join(' · '))}</p>
 
 <div class="score nobreak"><div class="n">${d.score}<small>/100</small></div><div><strong>${esc(d.summary.headline)}</strong><div class="muted" style="margin-top:6px">Out of 100: reviews 40, consistency across the web 15, profile 20, categories 12, activity 5, basics 8. Each check earns part of its points, so a strong profile and a middling one score differently.</div></div></div>
+${d.history.length >= 2 ? `<div class="nobreak" style="margin:10px 0 4px"><div class="muted" style="font-size:.85rem">Score by week, from the week of ${esc(weekLabel(d.history[0].week))}: ${d.history.map(h => h.score).join(', ')}</div>${trendSvg(d.history)}</div>` : ''}
 <p class="src">${d.source.kind === 'api'
   ? 'Read directly from the Google Business Profile.'
   : d.source.kind === 'public'

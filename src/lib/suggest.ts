@@ -51,7 +51,7 @@ async function proposeCategoryWords(l: LocationRow): Promise<string[]> {
 /**
  * Candidate categories from Google's own list, searched with words from four places: words the model
  * proposes, the categories the profile has now, the services on the Google profile, and the services
- * typed on the Configure tab. The model then picks from these; it never writes a category name.
+ * typed on the Settings tab. The model then picks from these; it never writes a category name.
  * (It used to search only the first word of the primary category plus the Configure services, which
  * for a profile with no Configure services meant a single search, "Internet", and five categories.)
  */

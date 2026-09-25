@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { meter } from './usage';
 
 /**
  * OpenAI is the default (gpt-5.5). OpenRouter is used only if OPENROUTER_API_KEY is set and
@@ -48,6 +49,7 @@ export async function json<T = any>(system: string, user: string): Promise<T> {
     response_format: { type: 'json_object' },
     ...(p.extra ?? {}),
   } as any);
+  meter('ai', { tokens: res.usage?.total_tokens ?? 0 });
   const raw = res.choices[0]?.message?.content ?? '{}';
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
   try { return JSON.parse(cleaned) as T; }
@@ -62,5 +64,6 @@ export async function text(system: string, user: string): Promise<string> {
     messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     ...(p.extra ?? {}),
   } as any);
+  meter('ai', { tokens: res.usage?.total_tokens ?? 0 });
   return (res.choices[0]?.message?.content ?? '').trim();
 }

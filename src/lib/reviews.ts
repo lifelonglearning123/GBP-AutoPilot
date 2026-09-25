@@ -2,6 +2,7 @@ import { all, one, run, log } from './db';
 import { text as llmText } from './llm';
 import { location, view, type LocationRow } from './locations';
 import { listReviews, replyToReview, STARS } from './gbp';
+import { alertBadReview } from './alerts';
 
 export type ReviewRow = {
   id: string; location_id: string; reviewer: string | null; rating: number; comment: string | null;
@@ -40,11 +41,21 @@ export async function poll(locationId: string): Promise<{ fetched: number; newUn
       g.reviewId, l.id, g.reviewer?.isAnonymous ? 'Anonymous' : (g.reviewer?.displayName ?? 'A customer'), rating, g.comment ?? '',
       g.createTime ?? null, g.updateTime ?? null, replyComment, g.reviewReply?.updateTime ?? null, replyComment ? 'posted' : 'none'
     );
+    if (!existing) {
+      try {
+        await alertBadReview(l, {
+          id: g.reviewId, rating, reviewer: g.reviewer?.isAnonymous ? 'Anonymous' : (g.reviewer?.displayName ?? 'A customer'),
+          comment: g.comment ?? '', createTime: g.createTime ?? null,
+        });
+      } catch (e: any) { log('alert', 'error', e.message, l.id); }
+    }
     if (!replyComment && (!existing || existing.draft_status === 'none')) {
       newUnreplied++;
       try {
         await draft(g.reviewId);
-        if (l.auto_reply) { await post(g.reviewId); posted++; }
+        // Automatic replies, except 1 and 2 star reviews when the business holds those for a person.
+        const held = Boolean(l.hold_low_stars) && rating <= 2;
+        if (l.auto_reply && !held) { await post(g.reviewId); posted++; }
       } catch (e: any) {
         run(`UPDATE reviews SET draft_status = 'failed', draft_error = ? WHERE id = ?`, e.message, g.reviewId);
         log('reviews', 'error', `${g.reviewId}: ${e.message}`, l.id);
@@ -104,4 +115,19 @@ export async function post(reviewId: string): Promise<void> {
     log('reply', 'error', e.message, l.id);
     throw e;
   }
+}
+
+/**
+ * Post every drafted reply for a business in one go, for clearing a backlog. Replies to 1 and 2 star
+ * reviews are never included: those are approved one by one.
+ */
+export async function postAll(locationId: string): Promise<{ posted: number; failed: number; held: number }> {
+  const drafts = reviews(locationId).filter(r => r.draft_status === 'draft' && !r.reply_comment && (r.draft_reply ?? '').trim());
+  const held = drafts.filter(r => r.rating <= 2).length;
+  let posted = 0, failed = 0;
+  for (const r of drafts.filter(r => r.rating > 2)) {
+    try { await post(r.id); posted++; } catch { failed++; }
+  }
+  log('reply', failed ? 'error' : 'ok', `Posted ${posted} drafted replies at once${failed ? `, ${failed} failed` : ''}${held ? `; ${held} to 1 and 2 star reviews left for approval` : ''}`, locationId);
+  return { posted, failed, held };
 }
