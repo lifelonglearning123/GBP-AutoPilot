@@ -242,8 +242,13 @@ same numbers, or the agency ends up explaining two versions of the truth.
   is on one side and not the other, that is a bug.
 - Shared panels take the audience with them. `ListingPanel` has an `audience`
   prop because two of its sentences are about US and a business owner reads them
-  differently; `NextSteps` takes `handled`. Anything naming the platform, a
-  Serper key or an API is agency wording, and needs a client sentence beside it.
+  differently. Anything naming the platform, a Serper key or an API is agency
+  wording, and needs a client sentence beside it.
+- `NextSteps` used to take a map of which pages existed, so a step could say
+  "<agency> does this for you" instead of linking nowhere. Every page now exists
+  under both bases, so that is gone and `base` is the only difference between
+  the two copies. If a step ever needs that treatment again, the page is missing
+  from the portal — fix that instead of bringing the map back.
 - A shared panel must take its `base` path as a prop. `ListingPanel` built
   `/agency/gbp/${id}` itself, and the portal's copy would have linked a client
   into the agency's pages.
