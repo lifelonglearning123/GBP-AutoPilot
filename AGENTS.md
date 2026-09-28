@@ -108,3 +108,56 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Proven end to end: unsigned POST -> 400 on both; a request signed with the deployed secret -> 200; and a real Stripe-delivered `customer.created` landed as `evt_1UKL...` with `endpoint='platform'`. Test rows were deleted afterwards.
 - Env var changes need a REDEPLOY before they take effect.
 - Still TEST mode (`sk_test_`). Going live needs: both endpoints recreated in live mode (new ids AND new secrets), `sk_live_` in STRIPE_SECRET_KEY, a fresh Connect onboarding (acct ids never cross modes), and every plan recreated because its price lives on the connected account.
+
+## The platform caught up with the local app (2026-09-28)
+
+The platform began as tenancy, billing and the audit; every Google feature this
+folder's app has was missing. It has now been ported. What to know:
+
+- `src/lib/gbp/google-api.ts` is the only file that talks to Google, and it now
+  WRITES: `patchLocation`, `getLocation`, `searchCategories`, `listMedia`,
+  `customerMediaCount`, `createPhoto`, `fetchDailyMetrics`. Performance figures
+  come from a fourth host, `businessprofileperformance.googleapis.com`.
+- `basics.ts` saves phone, website, hours and categories, each in its OWN
+  request. Google's two undocumented rules are kept: the phone mask must be
+  `phoneNumbers` with the primary and additional numbers together, and some
+  profiles refuse phone edits entirely (`PHONE_NUMBER_EDITS_NOT_ALLOWED`),
+  which is remembered in `gbp_profiles.phone_edit_blocked`. The whole location
+  is stored in `gbp_profiles.raw` because a write has to send back fields it is
+  not changing, and what is not kept cannot be sent back.
+- Name and address are deliberately not editable: Google re-verifies after
+  either, which can take a profile offline for weeks.
+- `suggest.ts` drafts description, categories and services. The model NEVER
+  writes a category name — it picks by id from candidates fetched from Google's
+  list, searched with words from four places. Approving a categories draft
+  MERGES (`cat-merge.ts`): it never removes, and existing categories fill
+  Google's nine places before anything suggested.
+- `categories.ts` caches Google's list in `gbp_categories`, shared across
+  agencies because it is Google's list. Nothing may ever be set to a name
+  Google did not return.
+- `compare.ts` is the competitor report: share of local search weighted by
+  position (`[100,70,50,30,25,20,16,13,11,10]`, 3 for 11-20), the leaderboard,
+  the search-by-search matrix, and the gaps. Rank and field count EVERYONE, not
+  the ten the table shows. A search that returned nothing is "left out", never
+  scored as a zero.
+- `geo.ts` works a position out from the address (OpenStreetMap, then
+  postcodes.io) when Google gives no pin. Before this the searches ran from the
+  middle of the country and named Birmingham businesses as a Swindon
+  competitor. With no position at all a run now refuses rather than guesses.
+- `extras.ts` reads photos and daily figures, and holds a photo queue released
+  on a schedule. `daily.ts` runs the round (photos, figures, weekly post,
+  weekly search re-check) from `/api/cron/gbp-daily`, guarded by CRON_SECRET; a
+  failed read rests that business six hours.
+- Linking a profile MUST record `googleAccount` as well as `googleLocationId`:
+  every v4 endpoint (photos, reviews, posts) names a location under its
+  account, and a link that forgets it 404s on all of them.
+- Never hand a JavaScript Date to a query — `npm run verify` scans for it, but
+  its heuristic only catches a Date in a plain variable. `syncPhotos` put one
+  straight into `.set()` and the scan could not see it. Use `sql` with ISO
+  text, `now()`, or `make_interval(...)`.
+- EVERY new table goes in `supabase/migrations/0001_rls.sql`.
+  `scripts/rls-check.ts` reports any table Supabase would publish without RLS.
+- Deliberately NOT ported: the website generator (`site.ts`). The platform
+  produces a site PLAN instead (`site-plan.ts`), which is the decision taken on
+  2026-09-27 — clients build on their own site in their own stack. Also not
+  ported: mock mode, which exists so the local app runs with no Google.
