@@ -252,3 +252,54 @@ same numbers, or the agency ends up explaining two versions of the truth.
 - A shared panel must take its `base` path as a prop. `ListingPanel` built
   `/agency/gbp/${id}` itself, and the portal's copy would have linked a client
   into the agency's pages.
+
+## Long checks run themselves (2026-09-28)
+
+- The three long jobs — searches, map, directories — are started and then
+  advanced in batches. On serverless there is no background worker, so the
+  BROWSER advances them: `RunProgress` calls `/api/gbp/run` over and over until
+  the run is done, then refreshes. Never put a "Carry on" button back. A
+  twenty-five point map needed five presses, nobody pressed five times, and
+  because the button looked like it did nothing it got pressed again — J's
+  Electrical had three identical map runs six seconds apart, all at 0 of 25.
+- A batch runs its searches with `Promise.all`, not in series. Nine map points
+  take about 7 seconds in two rounds; in series it was nine round trips.
+  `POINTS_PER_ADVANCE` is 8 (Maps), citations 4 (each is a search, a fetch and
+  a model call).
+- `run-locks.ts` is a LEAF: run ownership, the duplicate guard and the reaper,
+  with no import of the three workers, which import it. If it imported them
+  back the cycle would bite at runtime rather than at the typecheck.
+- Starting a run while one is live returns the LIVE one's id. A run nobody
+  carried on for ten minutes is marked stopped, by the daily round or
+  `npm run reap`.
+- `workspaceUser()` in session.ts returns agency-or-client with `clientId` set
+  only for a client, for the handful of endpoints serving both. Every read must
+  pin it; `runBelongsTo` is the example.
+
+## Searches, drafts, posts, photos (2026-09-28)
+
+- `suggestKeywords` works from three sources because each is wrong alone:
+  Google's categories are Google's words, the services are the owner's, and
+  autocomplete is real phrasing full of jobs and courses. Eight are tracked by
+  default; it never removes or switches off what somebody chose. Runs on
+  linking so a new client is not asked to invent their own search terms.
+  The rules are in `keyword-ideas.ts` (pure, checked); the asking is in
+  `keywords-suggest.ts`.
+- Every draft carries `evidence`, stored WITH it, never recomputed: what was
+  there before, how many of Google's categories were searched and on what
+  words, and which competitors hold the ones being added. "Three of the five
+  beating you list this" is an argument; "a model thought so" is not.
+- Posts: `postDay`/`postHour` schedule it properly (`nextPostAt`), and
+  `postNotes` is what the owner says has been happening. That box is the only
+  input describing what HAPPENED rather than what the business IS, and it is
+  the difference between a post about this week and one about nothing. Used
+  for `NOTES_FRESH_DAYS`, then ignored.
+- Photos upload to Supabase Storage (bucket `gbp-photos`, public, made by
+  `npm run photos:bucket`), because Google fetches a photo by URL and will not
+  take bytes. `photo-rules.ts` is a LEAF with the file rules, because the
+  browser needs them and `photo-store.ts` builds a service-role client — one
+  careless import ships that key in the bundle, and a check in verify.ts walks
+  every client component's imports to make sure none does.
+- A 1 or 2 star review emails the owner AND the agency, with the draft reply
+  already written, through the agency's own GoHighLevel. The alert insert is
+  what decides the review is new, so an hourly poll cannot mail it twice.
