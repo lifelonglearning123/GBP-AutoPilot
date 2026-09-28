@@ -161,3 +161,44 @@ folder's app has was missing. It has now been ported. What to know:
   produces a site PLAN instead (`site-plan.ts`), which is the decision taken on
   2026-09-27 — clients build on their own site in their own stack. Also not
   ported: mock mode, which exists so the local app runs with no Google.
+
+## The platform's business page, and hand-added businesses (2026-09-28)
+
+- The page now carries the four pieces the local app has: `ScoreRuler` ("How the
+  score adds up"), `NextSteps` (each job with the button that does it, the rest
+  folded), `Scorecard` ("The full checklist", inside "Everything we check"), and
+  `ListingPanel` for businesses added by hand. Components are
+  `src/components/score-ruler.tsx`, `next-steps.tsx`, `listing-panel.tsx`,
+  `status-icon.tsx`, `copy-link.tsx`.
+- The ruler's earned fill is `var(--brand)`, which the workspace layouts
+  override per agency; never hardcode the indigo there. Unchecked points are
+  HATCHED and left out of the score — the same three-state rule as the local app.
+- Status marks are drawn (tick, half, cross, dashed ring) so status never rests
+  on colour alone. `StatusIcon` takes `AuditItem.grade` straight.
+- The smallest group carries 5 of the 100 points, so the ruler's label row gives
+  every column a `minWidth` floor. Without it "Posts and photos" truncates.
+- Hand-added businesses: `public-listing.ts` reads and writes, `listing-match.ts`
+  is the pure half (which listing is it, where do typed details disagree) and is
+  what `verify.ts` exercises. Keep that split — importing the writing half into
+  the checks drags in the database and the whole suite fails on env.
+- A listing match needs the NAME **and** a postcode or phone to agree, uniquely,
+  before it is treated as certain. Everything else goes to "Wrong business?".
+  `matchedBy: 'search'` shows a warning on the panel.
+- Google's public hours are TEXT ("8 am–5 pm"). Everything that reads hours reads
+  `periods`, so `parsePublicHours` (`public-hours.ts`) converts them on the way
+  in, in BOTH `public-listing.ts` and `from-link.ts`. Stored as text alone, a
+  business with perfectly good hours scored as having none.
+- A Maps link carrying only a NAME must match a listing's name, never "the first
+  result" — the Mortlock & Joyce -> Mortlock Timber failure. `listingFromLink`
+  refuses and names the closest matches instead.
+- `ensureFresh()` runs before the client report and before a citation sweep, so
+  both compare against what Google shows rather than what someone typed. It
+  never throws.
+- Candidate searches are held ten minutes in memory, keyed by what was searched
+  for, because the page is reloaded while being read. An empty Serper result is
+  never cached.
+- The platform's `dev` and `start` scripts carry
+  `--max-http-header-size=131072`, for the same reason the local app's do: this
+  PC's localhost cookie jar overflows Node's 16KB limit and the dev server
+  answers 431, which Chrome shows as a bare error page. Proven with a 17KB
+  cookie header: 431 before, 307 after.
