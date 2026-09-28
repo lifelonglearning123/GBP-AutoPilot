@@ -303,3 +303,26 @@ same numbers, or the agency ends up explaining two versions of the truth.
 - A 1 or 2 star review emails the owner AND the agency, with the draft reply
   already written, through the agency's own GoHighLevel. The alert insert is
   what decides the review is new, so an hourly poll cannot mail it twice.
+
+## Video, and what a CRM post may do (2026-09-28)
+
+- Videos go up the same queue as photos, with `gbp_photo_queue.kind` and
+  `mediaFormat: "VIDEO"`. Google's cap is 30 SECONDS and it refuses after
+  transcoding — hours later, on a queue nobody is watching — so the length is
+  measured in the browser with a `<video>` element and sent with the upload.
+  The server checks everything else and trusts only that one number.
+- Video size is capped at 50MB, not Google's 100MB, because Supabase Storage
+  caps an upload at 50MB on this project. A limit somebody meets at 52MB after
+  waiting for the upload is worse than a smaller one stated up front. Re-run
+  `npm run photos:bucket` to bring an existing bucket's settings up to date.
+- Videos are not captioned: the caption model is given still images and a video
+  URL is not one.
+- `clients.crm_auto` reads the CRM before each weekly post. A post built that
+  way is marked `gbp_posts.from_crm`, and `publishPost` REFUSES to publish it
+  when called with `{ auto: true }` — the rule lives there, not only in the
+  scheduler, so a future caller cannot skip it. The words came out of
+  customers' own messages; the last look before public belongs to a person.
+- Anything a page's server action does that calls a model needs
+  `export const maxDuration`. Without it the platform kills the action part way
+  and the button looks broken — which is exactly what "Write one" was doing:
+  drafting takes 8 seconds, the drafts button 30.
