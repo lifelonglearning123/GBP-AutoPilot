@@ -202,3 +202,29 @@ folder's app has was missing. It has now been ported. What to know:
   PC's localhost cookie jar overflows Node's 16KB limit and the dev server
   answers 431, which Chrome shows as a bare error page. Proven with a 17KB
   cookie header: 431 before, 307 after.
+
+## Agency and portal are the same product (2026-09-28)
+
+Whatever exists on the agency side exists in the client portal too. The only
+difference is scope: an AGENCY sees every client in its workspace, a CLIENT
+sees only its own Google Business Profile. This is a rule, not a preference —
+the client is paying for the work and has to see it in the same words and the
+same numbers, or the agency ends up explaining two versions of the truth.
+
+- Build the `/portal/*` counterpart in the same change as anything new under
+  `/agency/*`. Leaving it out is a decision to justify, not an oversight.
+- Scope every client read and write with
+  `getClientProfile(agencyId, clientId, profileId)`. The agency helpers pin the
+  agency ALONE, which is right for an agency — it owns every client in it — and
+  is a hole in the portal, because the clients inside one agency are strangers
+  to each other. Anything taking a bare id (`applySuggestion` takes a
+  suggestion id and checks only the agency) needs a second check that the row
+  belongs to that client's profile.
+- Repeat the subscription gate (`clientAccess`) on each portal page. A client
+  keeps the link and reopens it after cancelling.
+- Where the portal has no page for a step — replying to reviews, weekly posts,
+  listings elsewhere are the agency's work — `NextSteps` takes a `pages` map
+  and a `handled` line, and says "<agency> does this for you" instead of
+  offering a button that leads nowhere.
+- The client's working page is `/portal/business/[id]`; its actions live in
+  `src/app/portal/gbp-actions.ts`, mirroring `src/app/agency/gbp/actions.ts`.
