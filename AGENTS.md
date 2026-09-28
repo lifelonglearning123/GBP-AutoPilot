@@ -326,3 +326,56 @@ same numbers, or the agency ends up explaining two versions of the truth.
   `export const maxDuration`. Without it the platform kills the action part way
   and the button looks broken — which is exactly what "Write one" was doing:
   drafting takes 8 seconds, the drafts button 30.
+
+## The agency's sales page, and the free check (2026-09-29)
+
+`AgencyShopfront` is what a local business sees at `gbp.theiragency.com`. It is
+dark end to end, and two rules hold it together:
+
+- THE ONLY COLOUR IS THE AGENCY'S. Every accent reads `--sf-accent`, set per
+  agency on the root element. A hardcoded indigo there is somebody else's brand
+  on `gbp.leonardopower.com`, and `npm run verify` walks the file's hex codes to
+  stop one being added. The three rank colours are the exception: they carry
+  data, so they are the same everywhere.
+- NOTHING ON IT IS INVENTED. No testimonials, no client logos, no numbers
+  nobody measured. What stands in for proof is the visitor's OWN profile scored
+  in front of them, and the map grid.
+
+Motion: four monochrome loops in `public/motion/`, tinted per agency in CSS, so
+one set serves every agency. `motion-src/README.md` has the prompts, the
+Higgsfield model and the ffmpeg that makes them loop; read it before
+regenerating one. `MotionPanel` fetches nothing until the panel is near the
+screen and plays nothing under `prefers-reduced-motion` — the poster is the
+real content.
+
+The FREE PROFILE CHECK is the one thing on this platform a person with no
+account can make it spend money on. Somebody types a business name, picks their
+listing, and sees a score out of 100 with the three worst gaps.
+
+- It ALWAYS asks which listing is theirs. A name and a town is never enough to
+  be certain, and scoring a stranger against a rival with a similar name is the
+  one mistake the page cannot recover from.
+- `free-check-rules.ts` is pure and pinned: the cache (7 days, and it does most
+  of the work), the visitor limit (8/hour), the agency limit (200/day), and the
+  wording. A refusal never mentions limits or credits — the visitor is a plumber
+  who pressed a button twice.
+- The agency comes from the HOST, never from the form. A body naming an agency
+  would let anyone spend any agency's credits.
+- `guardSpend` still has the last word, and every call is `recordUsage`d —
+  spend that is not recorded makes the allowance a lie.
+- The visitor is stored as a salted SHA-256, never an address. `gbp_free_checks`
+  is cache, rate limit and lead list in one; the leads show on `/agency/gbp`,
+  one row per business, worst score first.
+- `audit()` takes `AuditInput` (only the fields it reads) rather than a whole
+  profile row, because answering a stranger must not write a profile into an
+  agency's workspace.
+- The score is what was earned of what could be SEEN. 95 with a coverage of 63
+  is a well-kept profile, so `ctaFor()` says "Keep it there" and not "Get this
+  fixed" — a button that argues with the sentence above it is how a page stops
+  being believed.
+
+Testing a page at phone width on this machine: headless Chrome will NOT render
+below about 500px however `--window-size` is set, in either headless mode. The
+screenshot comes back cropped and looks exactly like horizontal overflow that
+is not there. Put the page in an `<iframe width=390>` inside a wide window
+instead, or measure `document.documentElement.scrollWidth` in the page.
