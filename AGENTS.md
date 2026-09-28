@@ -236,6 +236,14 @@ same numbers, or the agency ends up explaining two versions of the truth.
   enforce through `guardSpend`. The page prints what is left beside the button.
   Do not "protect" the agency by hiding these: a client who wants to know where
   they rank should not have to email somebody. Raise or lower the allowance.
-- Only two things stay agency-only, and both for a plain reason rather than a
-  permission: adding photos (queued from the agency's profile page) and reading
-  a hand-added business's public listing.
+- Nothing is agency-only any more. Photos (`PhotosPanel`) and the public
+  listing of a hand-added business (`ListingPanel`) are on both sides, and the
+  client starts their own searches and maps. Parity is now literal: if a feature
+  is on one side and not the other, that is a bug.
+- Shared panels take the audience with them. `ListingPanel` has an `audience`
+  prop because two of its sentences are about US and a business owner reads them
+  differently; `NextSteps` takes `handled`. Anything naming the platform, a
+  Serper key or an API is agency wording, and needs a client sentence beside it.
+- A shared panel must take its `base` path as a prop. `ListingPanel` built
+  `/agency/gbp/${id}` itself, and the portal's copy would have linked a client
+  into the agency's pages.
