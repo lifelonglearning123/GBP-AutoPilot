@@ -228,3 +228,14 @@ same numbers, or the agency ends up explaining two versions of the truth.
   offering a button that leads nowhere.
 - The client's working page is `/portal/business/[id]`; its actions live in
   `src/app/portal/gbp-actions.ts`, mirroring `src/app/agency/gbp/actions.ts`.
+  Tabs come from `BusinessTabs`; reviews and posts render from `ReviewsPanel`
+  and `PostsPanel`, which BOTH sides use, so neither can drift.
+- Clients start their own keyword checks and map runs. These are the only
+  actions in the portal that spend money, and what bounds them is the per-client
+  allowance the agency sets, which `startKeywordRun` and `startGridRun` already
+  enforce through `guardSpend`. The page prints what is left beside the button.
+  Do not "protect" the agency by hiding these: a client who wants to know where
+  they rank should not have to email somebody. Raise or lower the allowance.
+- Only two things stay agency-only, and both for a plain reason rather than a
+  permission: adding photos (queued from the agency's profile page) and reading
+  a hand-added business's public listing.
