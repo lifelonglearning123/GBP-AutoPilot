@@ -415,7 +415,7 @@ everything look right in a screenshot. A check in `verify.ts` reads every
 extension in `public/` and fails if one is not excluded; add the extension when
 adding a kind of file.
 
-## Geotagging photos does nothing — do not build it (2026-09-29)
+## Geotagging photos does nothing for Google — built anyway, and said so (2026-09-29)
 
 Asked for, and checked against Google rather than against the blogs. Google
 re-encodes every photo uploaded to a Business Profile and writes its own EXIF.
@@ -444,3 +444,22 @@ credits.
 What DOES move the photos check: ten or more photos, and one within thirty days
 (`syncPhotos`, scored half and half). The queue exists to keep the second half
 true without anybody remembering to do it.
+
+BUILT ANYWAY, on the client's decision, for a reason that is not Google: the
+copy in our storage is also the copy a client downloads for their own website,
+and there the tag survives. `geotag.ts` writes a complete APP1 segment holding
+a GPS IFD rather than editing an existing one — rewriting somebody else's
+offsets is where this corrupts a photo — and REPLACES any EXIF already there,
+so tagging twice does not stack segments. JPEG only; a PNG or WebP comes back
+untouched. The position is `storedCentre()`, read off the profile, so an upload
+costs nothing extra. 0,0 is refused: the null island is never a business.
+
+EXIF stores degrees UNSIGNED and the S and W reference letters are what make
+them negative. Get that wrong and a Wiltshire builder is in the Indian Ocean;
+the checks round-trip all four hemispheres.
+
+The upload panel says, in these words, that Google removes it on upload and
+that it changes nothing on Google. A check in verify.ts holds that sentence to
+the page. Geotagging is sold as a ranking trick constantly, and a client who
+believes that of us will believe the next thing too — do not quietly drop the
+sentence to make the feature sound better.
