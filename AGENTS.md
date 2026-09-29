@@ -661,3 +661,64 @@ worktree add` into the scratchpad, robocopy `node_modules` into it (0.4GB, ~10s
 — a junction is refused by Turbopack, "points out of the filesystem root"),
 copy `.env.local`, `npx next build` there. Delete it by mirroring an empty
 directory over it first; the paths are too long for `Remove-Item`.
+
+## The standalone audit tool is folded in, starting with rank (2026-09-29)
+
+`C:\python\Google Business Profile Audit` is a separate Next app built a few
+months ago: a lead-magnet page that scores a stranger's profile, writes a
+narrative with a model, renders a PDF and pushes the lead to GoHighLevel. The
+idea was right, the arithmetic was not, and it was a SECOND audit engine. The
+decision is to fold what it has into the platform's free check and retire it.
+
+What was wrong with it, measured by running its own `lib/scoring.ts`:
+
+- The grade moved with our scraper's luck. The same well-run profile scored 69
+  (C) or 78 (B) depending only on whether the review sample came back, and
+  Owner Responses silently changed weight from 15 to 10 with it, so two
+  businesses were not on one scale. Posts and Q&A returned an invented 50.
+  The platform's three-state rule is the answer and already exists.
+- Its "services" were ATTRIBUTES. `apify.ts` filled them from additionalInfo
+  "Service options", so "Onsite services" and "Online estimates" counted as
+  services: a neglected profile scored 80 on Categories and Services and a
+  well-run one 40.
+- Nobody could reach an A. Completeness caps at 94 for a flawless profile and
+  88 when the meta description is under 80 characters, and the scorecard then
+  printed "No description detected" — the very thing `openai.ts` forbids the
+  model from saying. One branch advised a "250+ word" description for a
+  750-character field.
+- The money figure was asserted, not measured: a flat 50% lost click share for
+  everyone, with no rank input and no ceiling. Its own function gives £675,000
+  a year for a London locksmith and £108,000 for a Swindon electrician.
+
+Increment one, shipped: the free check now reads WHERE THEY RANK.
+`rank-rules.ts` is the pure half. One Maps search from the listing's own
+address at the grid's close-range zoom, then the position decides what may be
+said — in the pack nothing is claimed to be lost, outside it the gap is sized
+with `visibilityPoints`, the same weighting the client report uses, and "not in
+the results at all" is said plainly. The three above them are named with their
+review counts, and no claim is made about why Google ranks them higher.
+
+- Costs `RANK_CREDITS` 3 on top of the 4, once a week per listing because the
+  cache covers reloads, recorded through `recordUsage` like everything else.
+- A rank that cannot be read shows no rank. No category means no search, no
+  position means no search, a Serper flake means no search.
+- Only the NUMBERS are stored on `gbp_free_checks`; the sentences are rebuilt on
+  every read, so a week-old lead is described in today's words.
+- `placeAddress` is split out of `ensureCentre`: one geocoder for the free check
+  and the paid side, because two would drift.
+- The agency's leads list shows the rank beside the score. That is the opening
+  line of the phone call.
+
+The one wart is the phrase, which is Google's own category: J's Electrical is
+filed as "Electrical installation service" while the firm two streets away is
+"Electrician". `PHRASE_NOTE` says where the search came from rather than hiding
+it. Tried and rejected: autocomplete on a category stem, which returns
+wholesalers for "electrical swindon" and a building society for "building
+trowbridge". Choosing real phrases stays a paid-side job, where a model works
+from autocomplete hints.
+
+Still to fold: the PDF, the model narrative, the GoHighLevel lead push, and the
+website signals (reachable, HTTPS, listed-as-http, a page per category). A
+POUNDS figure needs two things the free check does not have — a search volume
+source and the owner's average job value — so it stays unbuilt rather than
+guessed.
