@@ -463,3 +463,50 @@ that it changes nothing on Google. A check in verify.ts holds that sentence to
 the page. Geotagging is sold as a ranking trick constantly, and a client who
 believes that of us will believe the next thing too — do not quietly drop the
 sentence to make the feature sound better.
+
+## The business page, after a proper look at it (2026-09-29)
+
+- SCORE RULER. The bar and the labels are ONE grid sharing ONE column template,
+  because they were two flex rows carrying the same weights and that is not the
+  same thing: a minimum width on the label row meant that once the smallest
+  group hit the floor, every column after it slid out from under its own stretch
+  of bar. Never give the labels their own widths. Below `md` it becomes a row
+  per group — hiding the names left a row of coloured stripes meaning nothing.
+  `GROUP_LABEL.Activity` is "Posts & photos" so the longest name wraps to two
+  lines in the narrowest column.
+- FIGURES. There is no separate figures page: a figure you have to navigate
+  away to see is a figure nobody looks at twice. Each metric card is a button
+  and opens `MetricChart` over the page. A LINE, not bars — the question a
+  trend answers is which way it is going — with Week, Month and Quarter, and
+  every value printed as well as drawn, because a number that exists only on
+  hover does not exist on a phone or to a screen reader.
+  It is a native `<dialog>` driven ENTIRELY by React state. Do not go back to
+  listening for the element's own `close` event: it did not always fire, which
+  left an invisible dialog mounted and the next card opened nothing. Every way
+  out calls `onClose`. Tailwind's preflight zeroes the margin a dialog centres
+  itself with, so `.chart-dialog` sets `margin: auto`.
+- SAVING A DETAIL DOES NOT MOVE THE PAGE. `SavePart` and `SaveForm` use
+  `useActionState` against `saveBasicsStateAction` /
+  `clientSaveBasicsStateAction`, which RETURN a result instead of redirecting.
+  A redirect reloads and drops the reader at the top, so on a page of eight
+  sections every field cost you finding your place again. A saved section folds
+  to its one-line summary — which is the saved value, so the fold is the proof;
+  a refused one stays open with the reason. `router.refresh()` brings the score
+  and the checklist up to date without moving anything.
+  The save button belongs on a row with the INPUT. It used to sit in a flex row
+  aligned to the bottom of a whole field, hint included, so it hung below the
+  box it belonged to.
+- THE DRAFT READS THE CLIENT'S WEBSITE. `site-read.ts`, fed into
+  `candidates()` and recorded on the categories evidence. The profile's
+  categories and services describe the PROFILE; the website is where the owner
+  wrote down what they sell. Headings and list items only — body prose is
+  reassurance and mining it finds words matching a hundred unrelated
+  categories. Calls to action are refused (`looksLikeService`): "Apply For
+  Finance - Get a decision within 60 seconds" is a good heading and a terrible
+  service. Plurals fold, so "Loft Conversions" is not reported missing against
+  "Loft conversion". Every phrase carries the page it came from, so a
+  suggestion can be argued for rather than taken on trust.
+  `missingFromProfile` is the one that earns its keep: Nick Dyer's site sells
+  four things his Google profile has never mentioned.
+  `pageHtml()` in serper.ts is the raw markup; `pageText()` strips the tags and
+  so cannot see a heading.
