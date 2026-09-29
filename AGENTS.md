@@ -414,3 +414,33 @@ being sent to a login page while the `.jpg` posters beside it loaded and made
 everything look right in a screenshot. A check in `verify.ts` reads every
 extension in `public/` and fails if one is not excluded; add the extension when
 adding a kind of file.
+
+## Geotagging photos does nothing — do not build it (2026-09-29)
+
+Asked for, and checked against Google rather than against the blogs. Google
+re-encodes every photo uploaded to a Business Profile and writes its own EXIF.
+Reading back what Google actually serves for Nick Dyer Construction's nine
+photos, every one carries exactly six tags:
+
+    IFD0     Software, YCbCrSubSampling (0x0212), ExifIFDPointer
+    Exif IFD ExifVersion (0x9000), PixelXDimension, PixelYDimension
+    NO GPS IFD at all
+
+No coordinates, no camera make or model, no original date, no description.
+Whatever the uploader put in is gone. So writing GPS into a JPEG before sending
+it achieves nothing that survives the upload, and there is nothing to add to the
+photo queue.
+
+It also would not help if it survived: the profile already carries a verified
+address and, where Google accepted one, a hand-placed pin. A coordinate a
+stranger wrote into a file is the weakest claim about where a business is that
+Google holds, not the strongest.
+
+How it was checked, if it ever needs doing again: `listMedia` returns a
+`googleUrl` per item; fetch the bytes, find "Exif\0\0", read the TIFF header and
+walk IFD0 for tag 0x8825 (GPSInfoIFDPointer). It costs one Google read and no
+credits.
+
+What DOES move the photos check: ten or more photos, and one within thirty days
+(`syncPhotos`, scored half and half). The queue exists to keep the second half
+true without anybody remembering to do it.
