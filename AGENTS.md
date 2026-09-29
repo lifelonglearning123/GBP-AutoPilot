@@ -379,3 +379,38 @@ below about 500px however `--window-size` is set, in either headless mode. The
 screenshot comes back cropped and looks exactly like horizontal overflow that
 is not there. Put the page in an `<iframe width=390>` inside a wide window
 instead, or measure `document.documentElement.scrollWidth` in the page.
+
+## What customers did, in detail (2026-09-29)
+
+A tab on both sides — `/agency/gbp/[id]/activity` and
+`/portal/business/[id]/activity` — reading the daily figures the daily round
+already stores. It never calls Google, so a client may refresh it as often as
+they like and it costs nothing. The range and the chosen measure live in the
+URL, so it works with no JavaScript and can be sent to somebody.
+
+`activity-rules.ts` is pure and pinned, because these are the figures an agency
+is judged on at the end of the month:
+
+- A percentage needs something to divide by. Under five before is reported as
+  too few to compare, because one call to three is not "up 200%".
+- A day Google never answered for is never drawn as a zero. A gap is a gap, not
+  a day the phone stopped ringing.
+- The period claimed is the period reported: 61 days of figures over a 90 day
+  range says "the 61 days Google has reported".
+- Weeks are grouped back from the NEWEST day, so the most recent bar is a full
+  week and not a stub that reads as a collapse.
+- Shares always sum to 100; the largest absorbs the rounding.
+- The action rate (calls + website + directions, per hundred views) needs fifty
+  views before it is stated at all. It is the figure an owner actually wants:
+  views on their own have sold a lot of local SEO that produced no work.
+
+`syncMetrics` now asks Google for 90 days rather than 60 — the same one call.
+
+**The proxy matcher excludes static files BY EXTENSION.** A type missing from
+that list is answered with a redirect to `/login`, and on an agency's sales page
+— read by signed-out strangers, which is the whole point of it — the asset then
+simply does not appear. `.mp4` was missing, so the motion on every shopfront was
+being sent to a login page while the `.jpg` posters beside it loaded and made
+everything look right in a screenshot. A check in `verify.ts` reads every
+extension in `public/` and fails if one is not excluded; add the extension when
+adding a kind of file.
