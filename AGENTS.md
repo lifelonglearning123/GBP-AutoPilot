@@ -510,3 +510,44 @@ sentence to make the feature sound better.
   four things his Google profile has never mentioned.
   `pageHtml()` in serper.ts is the raw markup; `pageText()` strips the tags and
   so cannot see a heading.
+
+## Posts and photos: a queue, not a weekly scramble (2026-09-29)
+
+The weekly post was drafted and published on a timer, and the tab showed one
+card with three buttons nobody could tell apart. The real fault was that a
+weekly promise was being kept one week at a time: somebody had to turn up every
+week, and the week nobody did, the profile went quiet.
+
+- THE QUEUE. `gbp_posts.scheduled_for` and `approved_at`. A date is a plan;
+  approval is a person, recorded. `publishDue` in `queue.ts` publishes one
+  approved, due post a day at most — two landing together reads as a backlog
+  being cleared. A post `fromCrm` still never publishes itself; the guard is in
+  `publishPost` and `verify.ts` pins that the scheduled caller passes
+  `{ auto: true }` so the guard can fire.
+- `queue-rules.ts` is the pure half: slot dates from the profile's day and hour
+  (the first slot is NEVER in the past — otherwise the whole queue publishes at
+  once), the queue laid out including EMPTY weeks because the gap is the
+  message, and low water measured on APPROVED posts. A queue of drafts nobody
+  has read is a to-do list, not content.
+- `placeUndated` runs on every read and dates any draft without one. Posts
+  written before the queue existed would otherwise have vanished off the page
+  they were written on.
+- "Publish it without asking me" is GONE. Permission is per post now.
+- REMINDERS (`remind.ts`): running low (under two approved) and gone quiet
+  (nothing for 14 days), through the agency's GoHighLevel, once a week per
+  profile. The alerts table's unique key on (profile, kind, week) IS the claim —
+  `onConflictDoNothing().returning()` decides, so two rounds cannot both send
+  and nothing depends on writing a timestamp. The CLIENT's wording never
+  mentions a queue, a platform or an agency; a check fails if it ever does.
+- The CRM connection lives on a per-business SETTINGS tab, both sides. Posts
+  keeps one `SourcesLine` naming what it draws on, including what is NOT
+  connected. A tab is shared, so `verify.ts` now opens every tab's page on both
+  sides — a tab without its portal page is a 404 in a client's own portal.
+- PHOTOS: caption (goes to Google, and now names the town) and alt text (for
+  the client's own site, because a Business Profile has no alt text). Editable
+  until the photo goes up; after that Google keeps no handle for changing it.
+- THE DATE SCAN reads signatures now. Every queue date arrives as an argument,
+  so there was no `new Date(` near the query to notice — the `syncPhotos` blind
+  spot again. It flags a date in VALUE position only (`{ column: aDate }`);
+  looser than that gave seven false positives and a check nobody can keep green
+  is a check somebody turns off.
