@@ -1,6 +1,7 @@
-import { one } from './db';
+import { one, parse } from './db';
 import { view, isLinked, type LocationRow } from './locations';
 import { snapshot } from './public';
+import { canonical, detailsChanged, type Canonical } from './citations';
 import { get as getBenchmark } from './benchmark';
 
 export type AuditGroup = 'Reviews' | 'Categories' | 'Consistency' | 'Profile' | 'Activity' | 'Basics';
@@ -192,13 +193,27 @@ export function audit(l: LocationRow): { score: number; items: AuditItem[]; sour
     'api', seesPrivate);
 
   // ---------------- Consistency ----------------
-  const cit = one<{ found: number; mismatches: number }>('SELECT found, mismatches FROM citation_runs WHERE location_id = ? ORDER BY id DESC LIMIT 1', l.id);
+  const cit = one<{ id: number; found: number; mismatches: number; canonical_json: string }>(
+    'SELECT id, found, mismatches, canonical_json FROM citation_runs WHERE location_id = ? ORDER BY id DESC LIMIT 1', l.id);
+  // A listing that prints no phone or address is not a listing printing the
+  // wrong one. Counted apart, and worth half a fault rather than none.
+  const partials = cit
+    ? one<{ n: number }>("SELECT count(*) AS n FROM citations WHERE run_id = ? AND status = 'partial'", cit.id)?.n ?? 0
+    : 0;
+  // And the whole run is about the details it was handed. A phone number edited
+  // afterwards leaves every verdict in it about the old one, so the check goes
+  // back to UNKNOWN rather than passing on a superseded answer.
+  const moved = cit ? detailsChanged(parse<Partial<Canonical>>(cit.canonical_json, {}), canonical(v)) : [];
+  const stale = moved.length ? moved.join(' and ') : null;
   add('nap', 'Name, address and phone consistent across the web', 'Consistency',
-    cit && cit.found ? ((cit.found - cit.mismatches) / cit.found) * Math.min(1, cit.found / 8) : 0,
+    cit && cit.found ? ((cit.found - cit.mismatches - partials / 2) / cit.found) * Math.min(1, cit.found / 8) : 0,
     !cit ? 'Not checked yet: the other places this business is listed have not been looked at.'
-      : `${cit.found} listings found, ${cit.mismatches} showing a different name, address or phone.` +
-        (cit.found < 8 ? ' Few listings exist, so there is little for Google to cross-check.' : ''),
-    'api', Boolean(cit));
+      : stale ? `The ${stale} changed after this was checked, so the verdicts are about the old one. Re-run the citation audit.`
+      : `${cit.found} listing${cit.found === 1 ? '' : 's'} found. ` +
+        (cit.mismatches ? `${cit.mismatches} show${cit.mismatches === 1 ? 's' : ''} a different name, address or phone. ` : 'None of them disagree with Google. ') +
+        (partials ? `${partials} do${partials === 1 ? 'es' : ''} not show enough to tell. ` : '') +
+        (cit.found < 8 ? 'Few listings exist, so there is little for Google to cross-check.' : ''),
+    'api', Boolean(cit) && !stale);
 
   const known = items.filter(i => !i.unknown);
   const knownW = known.reduce((s, i) => s + i.weight, 0);

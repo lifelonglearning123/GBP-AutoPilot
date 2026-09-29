@@ -250,6 +250,15 @@ export const FAQ: FaqSection[] = [
         ],
       },
       {
+        id: 'citation-stale',
+        q: 'A directory says "Consistent" but it shows our old phone number. Why?',
+        a: [
+          'Because it was consistent when the audit ran. An audit records the name, phone number and postcode it was given, and every verdict in it is about those. Change the phone number afterwards and the verdicts do not change with it: they still describe the old one, correctly.',
+          'The heading above the table shows what the audit actually compared against, and the details as they stood then. When the name, phone number or postcode has changed since, the page says so and the **"Name, address and phone consistent across the web"** check goes back to **not checked** rather than passing on an answer about a number nobody uses any more. Coverage drops, which is the honest position: nobody has looked since the change.',
+          'Re-run the citation audit and the verdicts are about today.',
+        ],
+      },
+      {
         id: 'read-only',
         q: 'Why can’t I post review replies or Google Posts for this business?',
         a: [

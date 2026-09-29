@@ -66,6 +66,24 @@ export function canonical(v: LocationView): Canonical {
   };
 }
 
+/**
+ * What has moved since a run was taken.
+ *
+ * A run's verdicts are about the details it was HANDED. J's Electrical had its
+ * phone number changed minutes after a check, and Cylex went on reading
+ * "Consistent" beneath a heading quoting the new number — the old one was what
+ * had been compared, and it did agree. The snapshot per run is deliberate, so
+ * the fix belongs in what is shown, never in rewriting the run.
+ */
+export function detailsChanged(ran: Partial<Canonical> | null | undefined, now: Canonical): string[] {
+  if (!ran) return [];
+  const changed: string[] = [];
+  if ((ran.name ?? '') !== now.name) changed.push('name');
+  if ((ran.phoneDigits ?? '') !== now.phoneDigits) changed.push('phone number');
+  if ((ran.postcode ?? '') !== now.postcode) changed.push('postcode');
+  return changed;
+}
+
 export { normPhone } from './nap';
 /**
  * Names are compared with accents, punctuation, spacing, legal suffixes and the town stripped, so

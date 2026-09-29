@@ -1,5 +1,6 @@
 import { location, view } from '@/lib/locations';
-import { canonical, citations, latestRun, missingDirectories, DIRECTORIES } from '@/lib/citations';
+import { canonical, citations, detailsChanged, latestRun, missingDirectories, DIRECTORIES } from '@/lib/citations';
+import type { Canonical } from '@/lib/citations';
 import { locId } from '@/lib/ids';
 import { parse } from '@/lib/db';
 import Action from '@/components/Action';
@@ -18,13 +19,26 @@ export default async function CitationsPage({ params }: { params: Promise<{ id: 
   const rows = run ? citations(run.id) : [];
   const missing = run ? missingDirectories(run.id) : DIRECTORIES;
   const hasSerper = Boolean(process.env.SERPER_API_KEY);
+  // Every verdict below was judged against the details as they stood when the
+  // run was taken, so that is what is shown above them.
+  const ran = run ? parse<Partial<Canonical>>(run.canonical_json, {}) : null;
+  const changed = detailsChanged(ran, c);
+  const shown = ran ?? c;
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-4">
         <div className="text-sm">
-          <div className="text-xs muted uppercase tracking-wide mb-1">Canonical NAP (from the profile)</div>
-          <div><strong>{c.name}</strong> · {c.street}{c.town ? `, ${c.town}` : ''} {v.address.postalCode ?? ''} · {c.phone || 'no phone'}</div>
+          <div className="text-xs muted uppercase tracking-wide mb-1">
+            {run ? 'Compared against, as the profile stood then' : 'Canonical NAP (from the profile)'}
+          </div>
+          <div><strong>{shown.name ?? c.name}</strong> · {shown.street ?? c.street}{(shown.town ?? c.town) ? `, ${shown.town ?? c.town}` : ''} {shown.postcode ?? v.address.postalCode ?? ''} · {shown.phone || 'no phone'}</div>
+          {changed.length > 0 && (
+            <div className="text-sm mt-1" style={{ color: 'var(--warn)' }}>
+              The {changed.join(' and ')} {changed.length === 1 ? 'has' : 'have'} changed since this audit ran, so every
+              verdict below is about the old one. Re-run it to see where you actually stand.
+            </div>
+          )}
           <div className="text-xs muted mt-1">
             {run ? <>Last audit {run.ran_at.slice(0, 16)}: {run.searched} pages checked, {run.found} citations, {run.matches} consistent, {run.mismatches} mismatched.</> : 'Not audited yet.'}
             {!hasSerper && <> · <span style={{ color: 'var(--warn)' }}>SERPER_API_KEY not set{process.env.GBP_MOCK ? ', using mock pages' : ''}.</span></>}
