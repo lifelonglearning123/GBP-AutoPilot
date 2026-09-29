@@ -551,3 +551,52 @@ week, and the week nobody did, the profile went quiet.
   spot again. It flags a date in VALUE position only (`{ column: aDate }`);
   looser than that gave seven false positives and a check nobody can keep green
   is a check somebody turns off.
+
+## Two rules from the posts and rankings work (2026-09-29)
+
+### A client is never shown what a search costs us
+Credits, allowances and zoom levels are the AGENCY's business. Telling the
+person paying for the service that their map used 75 search credits, or 23p of
+a 50p monthly allowance, invites a conversation about pennies instead of about
+rankings — and it is our cost of goods, which no client should be reading.
+
+- `MapPanel` takes an `audience`. The agency keeps the credits AND the zoom,
+  because the zoom is what makes two maps comparable. The client gets "25 spots
+  across your area, each one a fresh Google Maps search."
+- Nothing under `/portal` calls `formatAllowance`. A check in `verify.ts` fails
+  if an allowance or the word "credits" appears on a client page — it strips
+  block comments first, so explaining WHY in a comment is still allowed.
+- This REPLACES the earlier decision that the portal "prints what is left
+  beside the button". The allowance still bounds a client's runs; they are just
+  not shown the arithmetic. A refusal has to read as plain English, not as a
+  quota message.
+
+### A verdict carries the evidence for it
+Anything the app concludes about a business is shown with what it concluded it
+from. This is the same standard as the categories draft naming the page and
+phrase a suggestion came from, and the free check naming which Google account
+manages which listing.
+
+- "Wrong kind of results" is judged from the Google CATEGORIES of the top ten
+  results and NOTHING else — not names, not websites. `judgeIntent` in
+  `competitors.ts` counts them, and the stored note now names them: "Google
+  lists the results as: electric vehicle charging station x7". A verdict a
+  reader cannot check is one they have to take on trust.
+- A search judged "wrong" is LEFT OUT of the share of search, never scored as a
+  zero. A search returning car parks says nothing about an electrician, and
+  scoring it 0 would make the number a lie.
+
+### Smaller corrections in the same pass
+- Saving a post's words or a photo's caption answers IN PLACE
+  (`editPostStateAction`, `editPhotoTextStateAction`). Approve, Publish now and
+  Delete still navigate, because those change the list.
+- A post `fromCrm` is not offered an Approve at all: it can never go out on a
+  schedule, so approving it did nothing. Its mark reads "You publish this one".
+  The old "Approved · needs a last look" said neither what it was nor what to
+  do about it.
+- A post opens UNDER its own week, inside that row's list item. Rendering it
+  after the list meant clicking the second week scrolled you past eight rows.
+- The photo panel does one thing at a time. Next runs server actions in series,
+  so eight "Add now" presses queued eight page reloads and every button said
+  "Adding…" at once — `useFormStatus` only knows its own form, so `Submit` takes
+  a shared `busy` for a group.
