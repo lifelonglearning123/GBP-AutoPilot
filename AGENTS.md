@@ -628,3 +628,36 @@ and `photos_latest_at`. They only changed when the daily `syncPhotos` ran, so
 the app put three photos up and then told the owner on the next screen that
 their newest was five weeks old. Being wrong about something it has just done
 itself is the worst kind of wrong this app can be.
+
+## A verdict is only about the details it was given (2026-09-29)
+
+Cylex read "Agrees with Google" on J's Electrical directly beneath a heading
+quoting a phone number Cylex does not show. Both halves were true of different
+numbers: the number had been changed in the app minutes after the check, the
+edit had gone through (Google confirms `07883 307308` as the primary, and
+`phone_edit_blocked` is false), and the check had compared the OLD one.
+
+- The listings pages now quote the RUN's own snapshot (`gbp_citation_runs
+  .canonical`), not today's details, and say "as they stood when it ran".
+- `detailsChanged()` in `citations-rules.ts` names what has moved since. The
+  page says so plainly and asks for a fresh check.
+- The fifteen-point "Details elsewhere" check goes back to UNKNOWN when
+  anything has changed. Coverage drops, which is the honest answer: nobody has
+  looked since. Same three-state rule as everything else.
+- The snapshot per run is deliberate — a verdict has to stay reproducible — so
+  the fix belongs in what is SHOWN, never in rewriting the run.
+- `showDigits()` puts a stored ten digits back the way a person writes them,
+  and only groups a mobile: London's 020 split cannot be recovered from digits,
+  and a confidently wrong grouping reads worse than none.
+
+Found while doing it: `partial` was counted as `mismatch`, so four directories
+printing no phone at all made the note read "5 listings found, 5 showing a
+different name, address or phone". One did. A mismatch is a whole problem, a
+listing showing too little to tell is half of one, and the sentence names both
+separately or says none of them disagree. J's: 82 to 86.
+
+Proving a platform commit deploys, without killing the dev server: `git
+worktree add` into the scratchpad, robocopy `node_modules` into it (0.4GB, ~10s
+— a junction is refused by Turbopack, "points out of the filesystem root"),
+copy `.env.local`, `npx next build` there. Delete it by mirroring an empty
+directory over it first; the paths are too long for `Remove-Item`.
