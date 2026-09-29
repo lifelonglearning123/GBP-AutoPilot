@@ -600,3 +600,31 @@ manages which listing.
   so eight "Add now" presses queued eight page reloads and every button said
   "Adding…" at once — `useFormStatus` only knows its own form, so `Submit` takes
   a shared `busy` for a group.
+
+## A run nobody watched finishes anyway (2026-09-29)
+
+The three long jobs are advanced in batches by the OPEN PAGE — there is no
+worker on serverless — which works while somebody is looking and fails the
+moment they are not. J's Electrical had three directory checks in one afternoon,
+all ending "Stopped: nothing carried it on for 10 minutes", and twelve rows
+saying "Waiting" for ever.
+
+- `carry.ts` sweeps stalled runs and ADVANCES them. The daily round calls it in
+  place of `reapEverywhere`, and gives up only on what it could not finish. A
+  run that was started was started for a reason.
+- Its OWN cron, `/api/cron/gbp-carry`, every ten minutes. Riding the daily round
+  would mean a run abandoned at nine finishing at twenty past seven the next
+  day, which is an answer nobody sees.
+- Bounded, because it shares a schedule: `CARRY_RUNS` 4 a round, `CARRY_BATCHES`
+  12 each, one failure ends that run's turn and never the sweep. It lets a run
+  go after `GIVE_UP_HOURS` (6), by which time nobody is waiting for it.
+- `reapEverywhere` stays for `npm run reap` — a person clearing something on
+  purpose, rather than a schedule deciding for them.
+- A stopped run is now SAID on the listings pages ("The last check did not
+  finish"), and an unread row reads "Not checked" rather than "Waiting".
+
+Also fixed with it: publishing a photo now moves `gbp_profiles.photos_count`
+and `photos_latest_at`. They only changed when the daily `syncPhotos` ran, so
+the app put three photos up and then told the owner on the next screen that
+their newest was five weeks old. Being wrong about something it has just done
+itself is the worst kind of wrong this app can be.
