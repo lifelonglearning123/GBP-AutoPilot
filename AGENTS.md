@@ -847,3 +847,33 @@ A wording check on JSX must tolerate line wrapping: Prettier breaks prose
 across lines, so `/saves to Google straight away/` never matches a source
 that reads `saves to\n              Google`. Write `\s+` where the phrase has
 a space.
+
+## A category search answers under its box (2026-10-01)
+
+Searching Google's category list on the details form redirected with the word
+in the address bar (`?cat=`): the page reloaded at the top, a categories
+section already scored as done started folded so the results sat inside a
+closed box, "no match" landed as a flash a screen away, and the results were
+poured into the same radio and checkbox lists as the categories already on
+Google with nothing to say which was which. R&B's owner met all four.
+
+- `CategoryPicker` (`src/components/category-picker.tsx`) is a client
+  component. The search is its own form answering under its own box through
+  `useActionState`; nothing navigates. `searchCategoriesStateAction` and
+  `clientSearchCategoriesStateAction` return `CategorySearchState`; the
+  redirecting twins are gone and verify pins that neither page reads the word
+  from the address bar.
+- TWO LISTS, LABELLED: "Your categories now" and "Google's categories matching
+  <word>", the second holding only what the search found. One save, as
+  before, because Google takes categories as one field, and only names Google
+  returned can be chosen — the server still refuses anything else.
+- The nine-extra limit is met at the box (`MAX_ADDITIONAL` from cat-merge.ts,
+  a leaf safe in the browser), not as Google's refusal after the save.
+  "Make primary" on a found category keeps the old primary as an extra: nobody
+  means "remove my main category" by pressing it.
+- The rule from 2026-09-30 covers search boxes as well as buttons: a redirect
+  with a flash is only right when the result is at the top of the page.
+
+The paragraph over the client's details form still said a name or address
+change could take the profile "off Google for weeks", after the form's own
+sentence had been corrected. Both now say lock, and sometimes suspend.
