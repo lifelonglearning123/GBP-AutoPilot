@@ -877,3 +877,36 @@ Google with nothing to say which was which. R&B's owner met all four.
 The paragraph over the client's details form still said a name or address
 change could take the profile "off Google for weeks", after the form's own
 sentence had been corrected. Both now say lock, and sometimes suspend.
+
+## Categories are chosen with verbs, not tickboxes (2026-10-01)
+
+The first in-place picker was tickboxes: a pre-ticked box captioned "Also,
+remove" beside every existing category and a box captioned "Also" beside
+every search result. An owner searching to ADD a category unticked the first
+boxes she saw, removed three she meant to keep, and never found how to add
+the one she wanted. A tickbox describes state; it does not say what pressing
+it does. That was the wrong model, not the wrong labels.
+
+`CategoryPicker` is now built around what a person does here — nearly always
+add one, sometimes change which is primary, rarely remove one:
+
+- No tickboxes or radios. Every control is a verb: Add, Make primary, Remove,
+  Undo, Use as primary, Search for it. An added category appears in "Your
+  categories now" marked "added, not saved yet"; a removed one stays visible,
+  struck through, with Undo. A line above Save says exactly what will change.
+  Nothing reaches Google until Save; the chosen set travels in hidden inputs.
+- The picker is keyed on `profile.categories`, so a save remounts it on
+  Google's truth rather than leaving "not saved yet" on screen.
+- "Categories the businesses above you use": `cachedRivalCategories` in
+  competitors.ts reads the last search run's leaders and ONLY the rivals
+  already cached in `gbp_competitors`, so opening the form never spends. A
+  name is offered as an Add button only when `resolveCachedCategory` knows
+  Google's id for it; otherwise it becomes a search, never a guess. Nick Dyer
+  is offered eight (General contractor, 2 of 5, id known); R&B none until a
+  search run exists.
+- Search results lead with what the word begins: "Electrician" before
+  "Electrical supply store".
+
+Verify pins: no `type="checkbox"` or `type="radio"` in the picker, every verb
+named, "Not saved yet:" present, the old primary kept as an extra on Make
+primary, and no `rivalProfile(`/`fetch(`/`recordUsage` inside the cached read.
