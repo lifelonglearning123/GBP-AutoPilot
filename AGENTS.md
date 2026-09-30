@@ -724,3 +724,40 @@ website signals (reachable, HTTPS, listed-as-http, a page per category). A
 POUNDS figure needs two things the free check does not have — a search volume
 source and the owner's average job value — so it stays unbuilt rather than
 guessed.
+
+## A button answers where it was pressed (2026-09-30)
+
+"Check the map again" on "Where you show up" redirected with a flash. The map
+is at the bottom of the page and a redirect lands at the top, so every press
+cost the reader their place — and when the run was REFUSED (J's Electrical had
+spent its allowance) the refusal was printed a screen and a half above the
+button. From the button's point of view nothing happened. That was the report.
+
+- `MapRunForm` (`src/components/map-run-form.tsx`) is a client component that
+  takes the answer back through `useActionState` and prints it under the
+  button; on success `router.refresh()` re-renders the section so the progress
+  bar and the half-filled map appear right there without the scroll moving.
+  `MapPanel` stays a server component. `startGridStateAction` and
+  `clientStartGridStateAction` return `SaveState`; the redirecting twins are
+  gone and verify pins that neither may redirect.
+- Pressing again while a map is going starts nothing new — that was already
+  the rule — and now SAYS so ("A map is already being checked. It is the one
+  filling in above.") instead of leaving a page that did not change.
+- Each progress bar sits with the thing it fills in: the map's under the
+  "Street by street" heading, the searches' under the button that starts them.
+  Both at the top of the page put "Checking the map 16 of 25" directly above
+  the share-of-search card from a DIFFERENT run, which read as a contradiction.
+- A map still running says "searched from 16 of 25 points so far", because
+  every figure beside it is counted out of what has been read.
+
+The rule, generally: a redirect-with-flash is only right for an action whose
+result is at the top of the page. Anything pressed below the fold answers in
+place, the way saving a detail already does. If a button "does nothing", first
+look for a message that landed somewhere the reader was not.
+
+Bash on this machine truncates a command over about 8K characters BEFORE
+running it (the heredoc then never closes: "unexpected EOF while looking for
+matching quote"), and PowerShell splits a `git commit -m` here-string on the
+double quotes inside it (pathspec errors for each word). Long patches go in a
+file via the Write tool and run with `python <file>`; commit messages go in a
+file and `git commit -F` it.
