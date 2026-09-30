@@ -761,3 +761,43 @@ matching quote"), and PowerShell splits a `git commit -m` here-string on the
 double quotes inside it (pathspec errors for each word). Long patches go in a
 file via the Write tool and run with `python <file>`; commit messages go in a
 file and `git commit -F` it.
+
+## A business that paid and has no listing row is still offered Google (2026-09-30)
+
+R&B Landscapes & Driveways signed up on Artificial Ignorance's page, paid,
+and the subscription went active. They then landed on a portal saying
+"Nothing yet. Artificial Ignorance Ltd will add your Google listing here",
+with no button. The Connect Google card was gated on an unlinked PROFILE ROW
+existing, and a self-signup that skips the optional Maps link (or pastes one
+that could not be read, which was swallowed silently) has a client record and
+nothing else. `linkClientProfile` then had nothing to match against and
+returned "nothing to do"; `syncProfilesFor` puts unmatched locations in the
+agency-wide `gbp_discovered` pile, never in the client's own list.
+
+- `PortalHome` shows the card whenever nothing is LINKED, rows or no rows
+  (`needsGoogle`), with wording that knows "we can see the public version"
+  from "we have nothing yet".
+- With nothing to match against, the listings the account manages ARE the
+  answer. `adoptLocation` (sync.ts) builds the profile row from Google's own
+  record, linked from birth. One listing is taken on outright; several are
+  written to `gbp_discovered` and offered on the portal home as "Which of
+  these is your business?"; none is said plainly. Existing rows are matched
+  first, through the pinned rules in link-match.ts.
+- `clientClaimListingAction` checks the chosen row back to a connection THIS
+  client made. The pile is agency-wide; an id must not let one client claim
+  another's branch.
+- A Maps link that could not be read on `/start` is logged as a
+  "listing from link" error, so a client with no listing is not a mystery to
+  the agency later.
+
+While tracing it: `sendGhlEmail` drops the from-name, from-address and
+reply-to that `createInvite` passes; it sends subject and body only. An agency
+without its own GoHighLevel (Artificial Ignorance, Leonardo Power) sends
+invites through the PLATFORM's location, so the client sees macaws.ai's sender
+and is created as a contact in macaws.ai's CRM. The invite LINK is white-label;
+the envelope is not. Not fixed yet.
+
+Two verify pins on link-client.ts are text-proximity heuristics: no `.limit(1)`
+within 300 characters of the text `gbpGoogleConnections`. A type written as
+`typeof gbpGoogleConnections.$inferSelect` trips it from a different query.
+Use the named `GoogleConnection` type.
