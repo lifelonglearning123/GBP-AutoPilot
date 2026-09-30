@@ -966,3 +966,19 @@ press. `SaveForm` has `button="none"` for a form that places its own, and the
 bar reads pending state through `useFormStatus`. If write-as-you-go is ever
 wanted, the honest version is a timer that coalesces changes with an Undo
 shown until it fires — never a write per click.
+
+## "Fill the empty weeks" wrote one post and said it wrote none (2026-10-01)
+
+`draftPost` returned the post's SUMMARY while being typed as `Promise<string>`.
+`draftBatch` dated each new post by what came back, so it ran
+`update gbp_posts set scheduled_for = … where id = "A good job starts…"`,
+Postgres refused a paragraph as a uuid, the loop stopped at its first post,
+and the count stayed at zero — "Nothing could be written just now", having
+written one, undated. `placeUndated` dated them on the next read, which is
+why they appeared at all. The job log carried the exact answer, params and
+all; look there first when a button says nothing happened.
+
+The insert now hands back the row and the id is returned; verify pins the
+return and the batch's use of it. The lesson is general: a function typed as
+returning a string can return the WRONG string and typecheck. Return the row,
+or the id, never the words, from anything that writes.
