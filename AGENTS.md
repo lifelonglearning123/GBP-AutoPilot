@@ -822,3 +822,28 @@ newest finished search run, the search the client tracks first, and the same
 pack average of 24 for "building firm trowbridge", not 200. No search run, or
 a thin one, keeps the fallback rather than inventing a number. The local app
 already had this through benchmark.ts.
+
+## A rule stated on a page says why, right there (2026-09-30)
+
+"The name and address are not editable here" stood alone above the details
+form and read as a limitation of ours. `HelpNote` (`src/components/help-note.tsx`)
+is a circled question mark beside a sentence like that, opening the reason in
+place: a native `<details>` with a drawn mark, so it works in a server
+component with no script, and `label` goes to screen readers. Use it wherever
+a sentence states a rule without room to say why — "left unscored", "we could
+not see this" — rather than sending people to a help centre. `BasicsForm` is
+shared by both sides, so the words are the same for the agency and the client.
+
+The sentence itself was overstated and has been corrected everywhere it
+appeared, including this file's own earlier note: re-verification LOCKS a
+profile for weeks and sometimes suspends it. "Offline" is the suspension
+case, not the usual one; a profile under re-verification normally stays
+visible to customers while the owner cannot manage it and edits queue. The
+help panel says which is which, what Google asks for (a video, a call or a
+postcard), what to do instead on the Google Business Profile website, and
+that everything else on the page saves to Google straight away.
+
+A wording check on JSX must tolerate line wrapping: Prettier breaks prose
+across lines, so `/saves to Google straight away/` never matches a source
+that reads `saves to\n              Google`. Write `\s+` where the phrase has
+a space.
