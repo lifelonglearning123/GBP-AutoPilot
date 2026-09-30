@@ -982,3 +982,26 @@ The insert now hands back the row and the id is returned; verify pins the
 return and the batch's use of it. The lesson is general: a function typed as
 returning a string can return the WRONG string and typecheck. Return the row,
 or the id, never the words, from anything that writes.
+
+## Posts are written one request at a time, with a bar that tells the truth (2026-10-01)
+
+Eight posts take a minute and a half. One request wrote all of them, so the
+button read "Writing…" for ninety seconds with nothing else changing — a
+button somebody presses again.
+
+- `draftNext` in queue.ts writes ONE post at the next free week. `draftBatch`
+  loops over it and stays for callers with nobody watching (the daily round).
+  The page drives the batch itself through `draftNextStateAction` /
+  `clientDraftNextStateAction`: one request per post, `router.refresh()` after
+  each so the new post appears where it will go out, and a bar saying
+  "Writing post 3 of 8". A closed tab keeps what was written.
+- THE ESTIMATE IS MEASURED, never typed. "About 50 seconds left" comes from
+  the posts written so far in this run; before the first lands it says "the
+  first takes about ten seconds". Verify fails on any constant multiplied by
+  the posts left.
+- The CRM is read on the first post of a batch only (`refreshCrm: step === 0`)
+  and whether it was used travels back with the answer (`usedCrm`) so later
+  posts are marked the same way.
+- The redirecting batch actions are gone. Same rule as the map, the search and
+  the categories: a redirect with a flash is only right when the result is at
+  the top of the page.
