@@ -801,3 +801,24 @@ Two verify pins on link-client.ts are text-proximity heuristics: no `.limit(1)`
 within 300 characters of the text `gbpGoogleConnections`. A type written as
 `typeof gbpGoogleConnections.$inferSelect` trips it from a different query.
 Use the named `GoogleConnection` type.
+
+## Two review checks, one job; the target is the local pack (2026-09-30)
+
+"Get more reviews" (total) and "Get new reviews every month" (pace) measure
+different things and Google weighs both, so the CHECKLIST keeps them apart.
+But the action is identical, so two rows with the same "Copy review link"
+button split fifteen points and read as padding. `mergeReviewSteps` in
+steps.ts, both apps, joins them in the TO-DO LIST only — after the failing
+filter, so one failing alone stays as it was — into "Ask customers for
+reviews", worth exactly what the two were, with a note that both halves are
+behind. The score is untouched.
+
+The platform also said "Around 200 is strong for most local businesses" to
+everyone: `facts.market` was declared with a better sentence waiting on it and
+was never filled in — the same universal-yardstick fault the standalone audit
+tool was criticised for. `marketFor` in `src/lib/data/gbp.ts` now takes the
+newest finished search run, the search the client tracks first, and the same
+`searchInDetail` maths the visibility page uses. Nick Dyer's target is the
+pack average of 24 for "building firm trowbridge", not 200. No search run, or
+a thin one, keeps the fallback rather than inventing a number. The local app
+already had this through benchmark.ts.

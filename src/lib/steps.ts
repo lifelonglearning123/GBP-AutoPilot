@@ -29,6 +29,7 @@ export const TODO: Record<string, string> = {
   primary_category: 'Choose a primary category',
   review_count: 'Get more reviews',
   review_velocity: 'Get new reviews every month',
+  reviews_ask: 'Ask customers for reviews',
   rating: 'Lift the star rating',
   reviews_replied: 'Reply to every review',
   post_weekly: 'Publish a post every week',
@@ -45,7 +46,42 @@ export const atStake = (i: AuditItem) => i.weight * (1 - i.points);
 /** Points in whole numbers, for anything a business owner reads. Fractions belong in the checklist. */
 export const worth = (n: number) => { const r = Math.round(n); return `${r} point${r === 1 ? '' : 's'}`; };
 
+/**
+ * Two checks, one job: asking customers for reviews.
+ *
+ * "Get more reviews" (the total) and "Get new reviews every month" (the pace)
+ * are different measures and Google weighs both, so the checklist keeps them
+ * apart. But the thing a business does about either is the same — hand out
+ * the review link — and two rows with the same button, splitting fifteen
+ * points, read as padding and prompt the question "what is the difference?".
+ * So in the TO-DO list, and only there, the two become one step worth what
+ * both are worth, and the note says both halves are behind. The score does
+ * not change: this touches the list, never the checks.
+ */
+export function mergeReviewSteps(items: AuditItem[]): AuditItem[] {
+  const count = items.find((i) => i.key === 'review_count');
+  const pace = items.find((i) => i.key === 'review_velocity');
+  if (!count || !pace) return items;
+  const weight = count.weight + pace.weight;
+  const stake = atStake(count) + atStake(pace);
+  const merged: AuditItem = {
+    key: 'reviews_ask',
+    label: 'Reviews, total and pace',
+    group: count.group,
+    weight,
+    // Chosen so the merged step is worth exactly what the two were.
+    points: weight ? 1 - stake / weight : 0,
+    unknown: false,
+    ok: false,
+    grade: count.grade === 'poor' || pace.grade === 'poor' ? 'poor' : 'partial',
+    note: `Both the total and the pace are behind. ${count.note} ${pace.note}`,
+    fix: count.fix,
+  };
+  return items.filter((i) => i !== count && i !== pace).concat(merged);
+}
+
 /** The failing checks a person can act on, biggest gain first (shared by the dashboard and Next steps). */
 export function nextSteps(items: AuditItem[]): AuditItem[] {
-  return items.filter(i => !i.unknown && !i.ok).sort((a, b) => atStake(b) - atStake(a));
+  // Merged AFTER the filter, so the two review checks join only when both fail.
+  return mergeReviewSteps(items.filter(i => !i.unknown && !i.ok)).sort((a, b) => atStake(b) - atStake(a));
 }

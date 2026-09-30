@@ -34,7 +34,7 @@ export default function NextSteps({ items, base, linked, reviewUri, phoneLocked 
       case 'primary_category': return edit('#categories', 'Choose category');
       case 'description': case 'services':
         return linked ? { kind: 'anchor', href: '#ai', label: 'See drafts' } : { kind: 'note', label: 'Link to Google to edit here' };
-      case 'review_count': case 'review_velocity':
+      case 'review_count': case 'review_velocity': case 'reviews_ask':
         return reviewUri ? { kind: 'copy', text: reviewUri, label: 'Copy review link' } : { kind: 'link', href: `${base}/reviews`, label: 'Open reviews' };
       case 'rating': return { kind: 'link', href: `${base}/reviews`, label: 'Open reviews' };
       case 'reviews_replied': return { kind: 'link', href: `${base}/reviews`, label: 'Reply to reviews' };
