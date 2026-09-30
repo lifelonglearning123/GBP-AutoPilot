@@ -910,3 +910,39 @@ add one, sometimes change which is primary, rarely remove one:
 Verify pins: no `type="checkbox"` or `type="radio"` in the picker, every verb
 named, "Not saved yet:" present, the old primary kept as an extra on Make
 primary, and no `rivalProfile(`/`fetch(`/`recordUsage` inside the cached read.
+
+## The website argues for categories (2026-10-01)
+
+A third source in `CategoryPicker`, "From your website": what the site sells
+that the profile is not filed under, each offer carrying the line on the site
+that argues for it. `site-categories.ts` is the pure join between site
+phrases and Google's list; `websiteCategoryHints` in categories.ts feeds it.
+
+- PRECISION OVER RECALL. The first cut offered a landscaper "Fencing school"
+  (the sport), an electrician "Battery store" for "battery storage", a
+  builder "Garden" (a public garden) for "Garden Walls", and an education
+  company "Group home" for "SEND SCHOOL GROUP ACTIVITIES". Each was
+  linguistically right and humanly absurd. Four rules, each pinned by a check
+  built from one of those: a category whose LAST word names a place is
+  dropped unless the business's PRIMARY category is a place; a name with no
+  trade word left after form and place words go argues for nothing; a single
+  bare noun is a place unless it is the whole phrase or ends the way trades
+  do (-er, -or, -ist, -ian); every trade word must appear, or two of three or
+  more; stems join only at five letters or more.
+- The site read (`ensureSiteRead`) is free but slow, so it is cached on
+  `gbp_profiles.site_read` for a week. A page open waits eight seconds at
+  most; a read that finishes later is still kept for next time. The time is
+  written by `sql\`now()\``, never a JavaScript date.
+- Google's list is searched by STEM ("fenc"), so both readings of a word come
+  back for the rules to judge. Those lookups are free on the approved API and
+  fill `gbp_categories`, which held 86 rows when this began.
+- Compare against the profile's CATEGORIES only. Comparing against the
+  description dropped every real service on R&B's site — the description
+  mentions paving and patios — and left town names to search with.
+- Single-word footer links ("Legal", "Blog") are rejected by
+  `looksLikeService` through the `NAV` set; "Legal" had become "Legal services".
+
+Live: R&B is offered Deck builder, Fence contractor, Landscaper and Landscape
+designer — the last two being the categories the tickbox picker cost them.
+Nick Dyer gets Garage builder and Gardener. Three sites with nothing to argue
+for get nothing.
