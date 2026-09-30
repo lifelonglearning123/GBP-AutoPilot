@@ -946,3 +946,23 @@ Live: R&B is offered Deck builder, Fence contractor, Landscaper and Landscape
 designer — the last two being the categories the tickbox picker cost them.
 Nick Dyer gets Garage builder and Gardener. Three sites with nothing to argue
 for get nothing.
+
+## Categories: one step, kept honest (2026-10-01)
+
+Writing to Google on every press of Add in the category picker was asked
+for, considered and refused. Google takes categories as ONE field: every save
+replaces the whole set, so four Adds would be four full rewrites of a live
+listing inside a minute and Remove-then-Undo two more. Category edits go
+through review, a burst of them can hold a profile pending, a changed primary
+can trigger re-verification, and a slip — the fault that caused the rebuild —
+would be public before the finger lifted. The summary line is the last look,
+which every other write on the platform keeps.
+
+So the save moved rather than the write. The "Not saved yet" line appears the
+moment a change is made and carries the button ("Save 2 changes to Google");
+it sticks to the bottom of the section while anything is unsaved; and there
+is no other save button, because with nothing changed there is nothing to
+press. `SaveForm` has `button="none"` for a form that places its own, and the
+bar reads pending state through `useFormStatus`. If write-as-you-go is ever
+wanted, the honest version is a timer that coalesces changes with an Undo
+shown until it fires — never a write per click.
