@@ -382,11 +382,13 @@ instead, or measure `document.documentElement.scrollWidth` in the page.
 
 ## What customers did, in detail (2026-09-29)
 
-A tab on both sides — `/agency/gbp/[id]/activity` and
-`/portal/business/[id]/activity` — reading the daily figures the daily round
-already stores. It never calls Google, so a client may refresh it as often as
-they like and it costs nothing. The range and the chosen measure live in the
-URL, so it works with no JavaScript and can be sent to somebody.
+The daily figures the daily round already stores, read on the OVERVIEW page of
+both sides by `MetricsPanel`, with `MetricChart` opening over the page from any
+metric card. There is no activity tab and no activity route: a separate page for
+the figures was built first and then folded into the cards, because a figure you
+have to navigate away to see is a figure nobody looks at twice. Nothing here
+calls Google, so a client may refresh as often as they like and it costs
+nothing.
 
 `activity-rules.ts` is pure and pinned, because these are the figures an agency
 is judged on at the end of the month:
