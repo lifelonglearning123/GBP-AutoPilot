@@ -1037,3 +1037,31 @@ a list capped at eight posts.
 The general rule: a model told to produce a fact it has not been given will
 produce one. Every "name the X" instruction must be paired with the X, or
 with an instruction to name none.
+
+## The website says where the business works (2026-10-01)
+
+Trowbridge, Bradford-on-Avon, Westbury and Bath were in R&B's site read all
+along; what the read lacked was a way to tell a town from a service, since
+"Westbury" and "Decking" are the same kind of phrase to a reader of HTML.
+
+- `placesNamed` in site-read.ts checks each place-like phrase (one to three
+  capitalised words) against the free UK places lookup
+  (`api.postcodes.io/places?q=`) and keeps only an EXACT match on the name:
+  real towns come back under their own names, "Decking" and "Block Paving"
+  come back as nothing. The confirmed towns are kept on `SiteRead.places`, in
+  the site's order. Up to 25 lookups a read, in parallel, never throwing.
+- `placeFor` takes the areas from the website first, then adds what Google's
+  service area has that the site did not, once each. When neither the
+  address nor the description names home, the first town the site names is
+  home (`source: "website"`).
+- A post reads the site before deciding where it is: `draftPost` calls
+  `ensureSiteRead` (cached a week, eight-second wait) and builds the voice
+  from the placed profile. A read taken before places were kept
+  (`held.places` not an array) is read again.
+- `LIKELY` keeps the home and services pages within the four fetched, then
+  the area pages ("/areas-we-cover", "/areas"); a check pins that "/services"
+  is among the four.
+
+Live: R&B's read holds Trowbridge, Bradford-on-Avon, Westbury, Melksham,
+Frome, Warminster, Chippenham, Devizes and Bath, and a post written with it
+names Trowbridge, serves those, and describes no job.
