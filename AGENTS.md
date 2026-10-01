@@ -1092,3 +1092,31 @@ supplying the X or saying "name none". A model asked for a fact it has not
 been given will produce one, and the hole shows up on whichever field is
 most permanent. The Theresa reply is still live as written; changing a
 published reply is the agency's call, not the software's.
+
+## Serper ran out of credits, and every map finished "done" and empty (2026-10-01)
+
+At about 12:45 on 30 September the platform's Serper account ran out of
+credits. From then on every map point, keyword search and free check was
+answered `400 {"message":"Not enough credits"}`. `mapsAt` threw "Serper
+answered 400." without the body; the map advance treated each refusal as a
+point that could not be read, marked the run "done" once every point had
+been attempted, and drew an empty map. Nine runs across three businesses
+reported success. "Check the map still doesn't generate the map results" was
+the whole account, not the button.
+
+- `SerperUnavailable` now carries Serper's own message and a `fatal` flag
+  when the refusal is about the ACCOUNT (credit, key, quota, or 401/402/403)
+  rather than the search; `refused(res)` reads the body. No refusal discards
+  its reason.
+- The map (`advanceGridRun`), the searches (`advanceKeywordRun`) and the
+  directory check (`advanceCitationRun`) each stop on a fatal refusal: the
+  run is marked `error` with "The search service has refused the platform:
+  … Nothing can be searched until that is put right", points and rows are
+  left unread for a later run, and nothing is recorded as spend.
+- A map search doubled the town ("… cambridge cambridge"); `startGridRun`
+  now folds it with `tidyPhrase`.
+
+Two lessons. Read the BODY of a refusal; the status alone said nothing.
+And "done" must mean read, not attempted: a run whose every point errored is
+not finished, it is stopped, and the page must say which. Topping the Serper
+account up is the only cure for the refusal itself; the platform cannot.
