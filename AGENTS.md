@@ -1203,3 +1203,58 @@ beside the "no such thing as where you rank" words.
   transitions, so a capture can land mid-fade and look washed out. That is
   the capture, not the page; capture a moment well inside a hold.
 
+## The free check says what it is costing them (2026-10-01)
+
+The offer on every agency's shopfront was a score out of 100. It is now the
+question an owner actually has — how many people search near them, how many of
+those they are in front of, and what the top three would be worth — with the
+score and the rank kept below it. Asked for as "how much free traffic could you
+generate if you were top 3".
+
+- `volume.ts` is the ONLY file that talks to Google Ads. `demand-rules.ts` is
+  the pure half (filtering, arithmetic, every sentence) and is pinned.
+- THE TRADE IS ASKED WITHOUT THE TOWN AND GEO-TARGETED TO IT. "electrician" in
+  Swindon, never "electrician swindon" — the second is a fraction of the same
+  demand and would understate every business we check. For the same reason
+  `keepPhrases` DROPS any phrase carrying the town: the geo targeting already
+  covers it and counting both counts the same person twice.
+- `generateKeywordIdeas` returns the phrases AND their volumes in one free
+  call, so the whole feature costs no Serper credits. `keepPhrases` is what
+  stops the sum being a lie: Google answers "electrical installation service"
+  with apprenticeship salaries, wholesale supplies and plumbers. Trade words
+  match on a shared five-letter ROOT, not whole words — "electrical" and
+  "electrician" share a root and nothing else, and matching words threw away
+  every phrase a customer actually types.
+- The gap uses `visibilityPoints` from compare.ts, the SAME weighting the paid
+  client report uses, so the free check and the report can never disagree about
+  what seventh place is worth. The range is third place to first — a real
+  range, not a fudge factor. Nothing is claimed for a business already in the
+  pack.
+- THE MONEY IS THE VISITOR'S OWN ARITHMETIC. They type "1 in N get in touch"
+  and what a job is worth; the page does the sum. We supply neither number,
+  because a made-up conversion rate and job value is exactly how the old audit
+  tool arrived at £675,000 a year for a locksmith. AGENTS.md parked a pounds
+  figure for this reason; this is the version that is allowed, because every
+  input is either Google's or theirs and visible.
+- Nothing is ever estimated. No credentials, no town, a place Google does not
+  know by that name, or an empty reply all mean the figure is simply not shown
+  and the page is what it was before. `demandFor` returns null, never throws.
+- Cached 30 days in `gbp_search_demand`, SHARED across agencies like
+  `gbp_categories`: it is Google's data about a place, not client data. Google
+  refreshes these monthly, so a longer cache would be stale and a shorter one
+  wasteful.
+- Google Ads is named in the privacy policy with what it receives (the trade
+  and the town, nothing about the person asking) — the same-commit rule.
+
+ACCESS, which is the only thing not done: Keyword Planner needs **Basic**
+access on the Cloud project. Developer tokens were retired on 2026-09-09 and
+access now attaches to the GOOGLE CLOUD PROJECT. The entry level, Explorer,
+explicitly excludes planning tools, so Explorer is not enough. Basic's one
+prerequisite is brand verification of the project — which `gold-courage-394715`
+already has from the OAuth consent screen work on 2026-09-27, and Basic is
+reviewed automatically within minutes. Env: `GOOGLE_ADS_REFRESH_TOKEN`,
+`GOOGLE_ADS_CUSTOMER_ID`, optionally `GOOGLE_ADS_LOGIN_CUSTOMER_ID`,
+`GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`/`SECRET` (a SEPARATE OAuth
+client is recommended, so the `adwords` scope never touches the verified
+consent screen agencies and clients see) and `GOOGLE_ADS_API_VERSION`.
+
