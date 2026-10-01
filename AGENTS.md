@@ -1176,3 +1176,30 @@ grid, two real Swindon maps (`public/shopfront/before.webp`, `after.webp`, from
   `ROOT_DOMAIN`/`PLATFORM_HOSTS` overridden to that port, then the agencies
   answer at `<slug>.localhost:<port>`.
 
+## The headline, shown happening (2026-10-01)
+
+Asked for: "a video that shows when a client searches, the map comes up top
+and it accounts for 80% of customer requirements". Built as `SearchDemo`
+(`src/components/search-demo.tsx`), a DRAWN phone in the hero: the search
+typed, the map pack arriving at the top with three rows (Your business, two
+rivals), a thumb tapping the first, a call sheet. The rank grid moved down
+beside the "no such thing as where you rank" words.
+
+- Drawn, not filmed, not generated. A screen recording would put Google's
+  interface and real businesses' names on every agency's page; Higgsfield
+  cannot render a search box or a readable word (the blocks video proved it).
+  Drawn, it is the agency's colour and sharp on a phone.
+- NO PERCENTAGE. "80%" is not a number anybody measured and the shopfront
+  invents nothing, so the demo claims nothing: no review counts, no names, no
+  figures. Verify pins it (`\d+%` followed by a word fails; a pin position
+  like `left: "38%"` does not). If a number is ever wanted, the one with a
+  source is Google's own 2016 research (76% of people who search on a phone
+  for something nearby visit within a day), and it goes on the page WITH the
+  source link, or not at all.
+- The timeline is React state (stages with holds, letters at 75ms), not
+  chained CSS delays, so every loop starts in step; it runs only while on
+  screen and rests on the last frame under `prefers-reduced-motion`.
+- Headless Chrome's `--virtual-time-budget` fast-forwards timers but not CSS
+  transitions, so a capture can land mid-fade and look washed out. That is
+  the capture, not the page; capture a moment well inside a hold.
+
