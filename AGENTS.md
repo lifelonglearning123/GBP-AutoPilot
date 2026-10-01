@@ -1146,3 +1146,33 @@ names; a nine-point map for "driveways trowbridge" read every point and
 placed it first or second at each; eight searches suggested, all in
 Trowbridge. The rule, generally: there is ONE answer to "where is this
 business", `placeFor`, and anything that needs a town asks it.
+
+## The shopfront went light (2026-10-01)
+
+`AgencyShopfront` is now white and airy, after merchynt.com's rhythm (stacked
+rounded panels with a board on one side, one dark band, a pale pricing band, a
+FAQ) but with our own hero: one sentence, the free check, the live rank grid.
+The two rules did not change. Only the agency's colour appears, now also as
+the ground — `--sf-wash` is `--sf-accent` mixed almost to white, the dark band
+is the accent mixed into near-black — so there is still no fixed tint to leak
+another brand. Nothing is invented: the proof is the visitor's own score, the
+grid, two real Swindon maps (`public/shopfront/before.webp`, `after.webp`, from
+`../images`) and the app's leaderboard with its real figures.
+
+- The leaderboard is DRAWN (`share-board.tsx`) rather than screenshotted. The
+  screenshot named nine rival electricians, which on every agency's public page
+  is a problem; the figures are kept and the rivals are "A rival electrician".
+- The Higgsfield loops are reused, not regenerated: `MotionPanel light` inverts
+  the greyscale film (`filter: invert(1)`) so pale forms on black become dark
+  forms on paper, and the tint is `multiply` at 13%. Zero credits. If a loop is
+  ever reshot for the light page, keep it monochrome for the same reason.
+- The free check's dial track reads `--sf-track` so it shows on white; the
+  streets of `RankGrid` are recoloured from CSS (`.sf .rank-grid-streets g`),
+  which overrides the SVG's presentation attributes without touching the
+  component the app also uses.
+- Phone-width proof is the iframe trick from the free-check notes; headless
+  Chrome at 1280 for the rest. The platform dev server is NOT normally running
+  on this PC (3000 is another app); start one on a spare port with
+  `ROOT_DOMAIN`/`PLATFORM_HOSTS` overridden to that port, then the agencies
+  answer at `<slug>.localhost:<port>`.
+
