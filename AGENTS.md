@@ -1246,23 +1246,36 @@ generate if you were top 3".
 - Google Ads is named in the privacy policy with what it receives (the trade
   and the town, nothing about the person asking) — the same-commit rule.
 
-ACCESS, which is the only thing not done: Keyword Planner needs **Basic**
-access on the Cloud project. Developer tokens were retired on 2026-09-09 and
-access now attaches to the GOOGLE CLOUD PROJECT. The entry level, Explorer,
-explicitly excludes planning tools, so Explorer is not enough. Basic's one
-prerequisite is brand verification of the project — which `gold-courage-394715`
-already has from the OAuth consent screen work on 2026-09-27, and Basic is
-reviewed automatically within minutes.
+THE VENDOR IS DATAFORSEO, after Google refused. Google's own Keyword Planner
+was the first choice — free, and it is Google's number — but access now attaches
+to a GOOGLE CLOUD PROJECT and the ladder is Test -> Explorer -> Basic, with
+planning tools (Keyword Planner included) excluded below Basic. Two applications
+for Explorer on `gold-courage-394715` were refused; the reason is only sent by
+email, to the API contact address on the Ads manager account's API Center page,
+and never arrived. Do not go back to that API Center page expecting to upgrade
+there — it now says so itself: "API access levels are now managed exclusively in
+the Google Cloud console." The likely cause, if anybody retries: the project is
+branded "Google My Business Automation" with one `business.manage` scope, so an
+Ads API request from it has nothing explaining itself.
 
-DO NOT go to the Ads account's Tools > API Center for this. That page still
-exists and now says so itself: "API access levels are now managed exclusively
-in the Google Cloud console... cannot be upgraded from this page." It is only
-for the API contact email and the legacy App Conversion Tracking API. The real
-page is `console.cloud.google.com/google/ads-apis/overview` inside the project,
-where the ladder is Test -> Explorer -> Basic: it shows the current level, and
-"Upgrade access level" names the next one and has the Apply button. Basic
-cannot be applied for until the project reads Explorer, and the page warns
-there if brand verification is missing. Env: `GOOGLE_ADS_REFRESH_TOKEN`,
+DataForSEO resells the same Keyword Planner figures, needs no approval, and
+costs about $50 to start and pennies per lookup after the 30-day cache. Env:
+`DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` (the API password from
+app.dataforseo.com/api-access, NOT the website sign-in password). Two calls:
+`/keywords_data/google_ads/locations/GB` to turn a town into a location code,
+held in memory for the life of the process, and
+`/keywords_data/google_ads/keywords_for_keywords/live` for the phrases and their
+volumes. `npm run volume:check -- "<trade>" <town>` prints what came back, and
+the vendor's own words when it fails.
+
+They answer HTTP 200 with their own status inside the body, which is the same
+trap Serper set — a failure that reads as success and a run that finishes empty
+calling itself done — so the task's status_code is checked too, and a check pins
+that.
+
+The swap took one file. `volume.ts` is the ONLY place a volume vendor is named,
+and nothing above it changed: not the arithmetic, not the page, not one of the
+443 checks. Keep it that way if a third vendor ever turns up. Env: `GOOGLE_ADS_REFRESH_TOKEN`,
 `GOOGLE_ADS_CUSTOMER_ID`, optionally `GOOGLE_ADS_LOGIN_CUSTOMER_ID`,
 `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`/`SECRET` (a SEPARATE OAuth
 client is recommended, so the `adwords` scope never touches the verified
