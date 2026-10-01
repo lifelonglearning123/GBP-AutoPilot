@@ -1347,3 +1347,32 @@ be re-skinned (the PDF is image-based, which is why that was not done now).
 without it the guide is answered with a redirect to /login, which is the same
 fault that sent every shopfront's `.mp4` to a login page.
 
+## An agency's own prospect never reaches our CRM (2026-10-02)
+
+Asked where a brochure lead actually goes, and for two of the three agencies
+the answer was wrong: `sendEmail` falls back to the PLATFORM's GoHighLevel
+when an agency has none, so Leonardo Power's and Artificial Ignorance's
+prospects were being created as contacts in macaws.ai's CRM and emailed from
+macaws.ai's sender. Both are leaks — the agency loses the lead, and a
+client-facing message carries a name the reader has never heard of.
+
+- `sendEmail` takes `requireAgency`. With it, the agency's own GoHighLevel or
+  nothing: no platform fallback, and it ANSWERS `{ok:false}` rather than
+  pretending it sent. `requestBrochure` passes it, and verify pins all three
+  parts.
+- Nothing is lost when an agency has no CRM. The download is the answer, and
+  the lead is on their own leads page regardless — that is scoped by
+  `agencyId` in `gbp_free_checks` and was always correct.
+- The platform fallback is still right for mail the PLATFORM sends. Only
+  messages from an agency to their own people set `requireAgency`.
+- STILL UNFIXED, same fault, recorded earlier: `createInvite`. An agency with
+  no GoHighLevel invites its clients through the platform's location, so the
+  client sees macaws.ai as the sender and is created in macaws.ai's CRM.
+  `requireAgency` is now the tool to fix it with — but an invite nobody can
+  send is worse than one from the wrong sender, so that one needs a real
+  fallback (the agency's own sending address) rather than silence.
+
+Which agencies have their own GoHighLevel is worth checking before blaming the
+code: only macaws.ai did on 2026-10-02. Agencies connect theirs at
+`/agency/settings`.
+
