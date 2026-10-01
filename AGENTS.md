@@ -1005,3 +1005,35 @@ button somebody presses again.
 - The redirecting batch actions are gone. Same rule as the map, the search and
   the categories: a redirect with a flash is only right when the result is at
   the top of the page.
+
+## A post names only a place the profile knows, and only a job the owner reported (2026-10-01)
+
+Six posts went into R & B Landscapes and Driveways' queue describing
+driveways laid in Watford. Nothing points there: the Google service area is
+Bath, Wells, Calne, Frome, Swindon and Corsham, the description and the
+website say Trowbridge, no review mentions it. R&B is a service-area business
+with no street address; the post writer took the town from the address
+alone, told the model the firm was "in the local area", and then told it to
+name the town once or twice. Given an order to name a town and no town to
+name, the model invented one. The same posts described finished jobs that
+never happened, because the "a job you finished recently" angle was offered
+with nothing reported; and all took that angle, because the rotation counted
+a list capped at eight posts.
+
+- `post-rules.ts` is the pure half, pinned. `placeFor` takes the place from
+  what is KNOWN, in order: the address, then the owner's description ("in
+  Trowbridge"), then the service area with postcode districts stripped
+  (`townOfPlace`), and when nothing is known the prompt says "Name NO town,
+  city or area at all" — a wrong one is worse than none.
+- The prompt forbids invention outright: no jobs, customers, dates, prices,
+  guarantees or events that were not given. `angleFor` rotates by how many
+  posts the business has EVER had (`count()`), skips "a job you finished"
+  until the owner's notes say what happened, and skips "an area you serve"
+  when no place is known.
+- The six unapproved Watford drafts were deleted. One post written with the
+  fix reads "In Trowbridge, we help with resin driveways, tarmac, block
+  paving…" and names no job.
+
+The general rule: a model told to produce a fact it has not been given will
+produce one. Every "name the X" instruction must be paired with the X, or
+with an instruction to name none.
