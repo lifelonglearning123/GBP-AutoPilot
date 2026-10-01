@@ -1120,3 +1120,29 @@ Two lessons. Read the BODY of a refusal; the status alone said nothing.
 And "done" must mean read, not attempted: a run whose every point errored is
 not finished, it is stopped, and the page must say which. Topping the Serper
 account up is the only cure for the refusal itself; the platform cannot.
+
+## A service-area business is centred on the town it names (2026-10-01)
+
+R & B Landscapes works from a van and has no address, so the map page said
+Google had given it no position and offered no button, and "Suggest
+searches" refused it with "no town on its profile". Its town was in its
+description, on its website and at the head of its Google service area.
+
+- `ensureCentre` falls back, after the address, to the home town decided by
+  `placeFor` — the SAME rule the posts, the replies and the description use,
+  so the map and the words never disagree about where a business is —
+  looked up on OpenStreetMap as `source: "town"`. The last resort is the
+  middle of the first postcode district in the Google service area
+  (`fromServiceArea`, postcodes.io `/outcodes/`), `source: "service area"`.
+  `storedCentre` keeps both sources; `centreNote` has words for each.
+- Both visibility pages call `await ensureCentre(profile)` on view, so the
+  centre is worked out the first time rather than read only from what was
+  stored. The button appears.
+- `suggestKeywords` takes the town from `placeFor` too, and refuses only when
+  no town is named anywhere, saying which four places would do.
+
+Live, with the credits back: R&B centred on Trowbridge from the town it
+names; a nine-point map for "driveways trowbridge" read every point and
+placed it first or second at each; eight searches suggested, all in
+Trowbridge. The rule, generally: there is ONE answer to "where is this
+business", `placeFor`, and anything that needs a town asks it.
