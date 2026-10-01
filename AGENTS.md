@@ -1281,3 +1281,33 @@ and nothing above it changed: not the arithmetic, not the page, not one of the
 client is recommended, so the `adwords` scope never touches the verified
 consent screen agencies and clients see) and `GOOGLE_ADS_API_VERSION`.
 
+## A business Google cannot find is the best lead on the page (2026-10-02)
+
+Asked: what happens when somebody types their name into the free check and
+nothing comes up. The answer was worse than a dead end — it was a wrong
+answer.
+
+- GOOGLE MAPS SEARCH IS FUZZY. "Zarquon Bros Nonexistent Trading" in Swindon
+  came back with eight listings: a gym, a storage firm, an accountant. The
+  page then asked a business that is not on Google to pick itself out of four
+  strangers. `scoreCandidate` already knew — same name 50, similar name 35,
+  postcode 30, phone 30, town 10 — so a candidate now has to clear
+  `NAME_AGREES` (35, the value of a PARTIAL name agreement): the name must
+  agree at least in part, and matching only the town means nothing. Measured:
+  J's Electrical 60, Nick Dyer 50, R&B 60, "Smith and Sons" finds
+  "F. Smith and Sons Roofing" at 35, nonsense 10 and gone.
+- THE LEAD IS KEPT. A search that finds nothing now writes its row to
+  `gbp_free_checks` (cid, title and score null — the table always allowed it
+  and nothing ever wrote one), and `recentFreeChecks` no longer filters out
+  score-null rows but sorts them FIRST. A business with no Google profile is
+  invisible on the map, the fix is free to create, and the agency never even
+  learnt somebody had looked.
+- TWO WAYS ON, never a dead end. `searchByLink` reads their own Google Maps
+  link through `listingFromLink` — the name on Google is routinely not the
+  name over the door — and it lands in the same "is this you?" step, because a
+  link can point at the wrong business too. The other way is the sale: "you
+  may not have a profile yet, which would explain a great deal."
+- The wording never blames the typing. `NOT_FOUND`, `NOT_FOUND_LINK` and
+  `NOT_FOUND_NONE` are in free-check-rules.ts, pinned, and a check fails if
+  "try the name exactly" ever comes back.
+
