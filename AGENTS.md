@@ -1065,3 +1065,30 @@ along; what the read lacked was a way to tell a town from a service, since
 Live: R&B's read holds Trowbridge, Bradford-on-Avon, Westbury, Melksham,
 Frome, Warminster, Chippenham, Devizes and Bath, and a post written with it
 names Trowbridge, serves those, and describes no job.
+
+## Every prompt that may name a place is given one, or told to name none (2026-10-01)
+
+The post writer was fixed for Watford; the description draft and the review
+reply had the same hole. `suggest.ts` fed the model "Town: unknown" and then
+ordered it to "front-load where (town names)"; `replies.ts` said the business
+was "in the local area" and then told the model to "echo the town naturally".
+One of R&B's PUBLISHED replies reads "the front path and patio in the local
+area" — the prompt's own placeholder echoed back under a customer's name. A
+description is more permanent than a post; a reply sits on a review for good.
+
+- All three prompts take their place from `placeFor` in post-rules.ts (the
+  address, the owner's description, the website's confirmed towns, Google's
+  service area, in that order) and, when nothing is known, say so in terms
+  the model cannot misread: "Home town: NOT KNOWN. Name no town, city or
+  area." The reply reads the site first (`ensureSiteRead`), as the post does.
+- One sentence shared by all three, pinned: "Do not invent. No jobs,
+  customers, dates, prices, guarantees, events or places that are not in
+  what you are given."
+- The description's evidence (`townInFirst250`) judges the town that was
+  actually known, not the address alone.
+
+The rule, generally: never write a prompt that says "name the X" without
+supplying the X or saying "name none". A model asked for a fact it has not
+been given will produce one, and the hole shows up on whichever field is
+most permanent. The Theresa reply is still live as written; changing a
+published reply is the agency's call, not the software's.
