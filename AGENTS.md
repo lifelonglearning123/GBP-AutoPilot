@@ -1311,3 +1311,39 @@ answer.
   `NOT_FOUND_NONE` are in free-check-rules.ts, pinned, and a check fails if
   "try the name exactly" ever comes back.
 
+## Two ways out of the free check (2026-10-02)
+
+Every check now ends at a fork instead of a single Buy button: have it done
+for you, or leave a name, email and phone and get the eight-page guide and do
+it yourself — reviews most days, the rest about an hour a week.
+
+- The owner who wants to do it themselves is worth having. They may be right,
+  and in a month they will know exactly how long an hour a week takes. Offering
+  only the service loses them entirely.
+- THE LEADS LIST WAS ANONYMOUS. It could tell an agency a business scored 48
+  and gave them no way on earth to ring it. `contact_name`, `contact_email` and
+  `contact_phone` on `gbp_free_checks`, given freely in exchange for the guide,
+  and shown as "Who to ring". The request attaches to the check they just ran,
+  so one row carries the score, the rank and the phone number.
+- `sendEmail` ANSWERS `{ok}` rather than throwing, so a try/catch never sees a
+  refusal. Taking it on trust made the page say "we have emailed it to you"
+  about a message GoHighLevel had just rejected — being wrong about something
+  it had done itself a second earlier. `emailed = sentIt.ok`, pinned.
+- The download is the answer; the email is a courtesy. A CRM that is not set
+  up, or is having a bad morning, must never cost somebody the file.
+- `checkContact` is forgiving about the phone — ten digits, however written. A
+  form that argues about spacing loses the lead it exists to capture.
+
+WHITE LABEL, KNOWINGLY BROKEN HERE. The guide says "GBP Autopilot" on all
+eight pages and it is served from every agency's shopfront, which was Chao's
+decision on 2026-10-02 after the cost was put to him: his agencies' clients
+can see the platform exists. The PAGE still never names it and the file is
+served as `google-business-profile-guide.pdf`, so the shopfront check stays
+worth something — this is a stated exception, not an oversight. The way out
+later is a brochure per agency, or the eight pages rebuilt as HTML so they can
+be re-skinned (the PDF is image-based, which is why that was not done now).
+
+`.pdf` had to be added to the proxy matcher. Everything in `public/` does —
+without it the guide is answered with a redirect to /login, which is the same
+fault that sent every shopfront's `.mp4` to a login page.
+
