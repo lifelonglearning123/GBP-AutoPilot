@@ -1252,7 +1252,17 @@ access now attaches to the GOOGLE CLOUD PROJECT. The entry level, Explorer,
 explicitly excludes planning tools, so Explorer is not enough. Basic's one
 prerequisite is brand verification of the project — which `gold-courage-394715`
 already has from the OAuth consent screen work on 2026-09-27, and Basic is
-reviewed automatically within minutes. Env: `GOOGLE_ADS_REFRESH_TOKEN`,
+reviewed automatically within minutes.
+
+DO NOT go to the Ads account's Tools > API Center for this. That page still
+exists and now says so itself: "API access levels are now managed exclusively
+in the Google Cloud console... cannot be upgraded from this page." It is only
+for the API contact email and the legacy App Conversion Tracking API. The real
+page is `console.cloud.google.com/google/ads-apis/overview` inside the project,
+where the ladder is Test -> Explorer -> Basic: it shows the current level, and
+"Upgrade access level" names the next one and has the Apply button. Basic
+cannot be applied for until the project reads Explorer, and the page warns
+there if brand verification is missing. Env: `GOOGLE_ADS_REFRESH_TOKEN`,
 `GOOGLE_ADS_CUSTOMER_ID`, optionally `GOOGLE_ADS_LOGIN_CUSTOMER_ID`,
 `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`/`SECRET` (a SEPARATE OAuth
 client is recommended, so the `adwords` scope never touches the verified
