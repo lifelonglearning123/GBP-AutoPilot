@@ -1414,3 +1414,60 @@ picker, a logo upload and a favicon upload, at `/agency/settings`.
   and posted nothing — a control that looks like it works and does not is worse
   than only offering the text.
 
+## The client report: the agency's, in the owner's order, as a PDF (2026-10-02)
+
+Asked for three things: branded with the agency's logo and colour, organised
+so a business owner understands it, and exportable to PDF. What was there
+opened with the score, ran in the order of the data sources, showed nothing
+of what the agency had done, carried no brand and had no print styles.
+
+THE ORDER IS THE OWNER'S QUESTIONS. Masthead (agency logo, name, business,
+date); one headline sentence with three figures; where you stand (the share-of-
+search leaderboard, then search by search); street by street (the map);
+what the agency did in the last 30 days; reviews; details elsewhere; what
+happens next, each step marked "<agency> will do this" or "Over to you"; and
+LAST, the score with the full checklist, as the working. `report-rules.ts` is
+the pure half and is pinned: the headline uses measured figures only, in order
+of what is known (searches + share, then share, then the verdict) and never a
+number nobody measured; `whoDoes` gives the owner only what nobody else can do
+(asking for reviews; name, address, verification); a month where nothing
+happened is said as such.
+
+- The headline's searches are the SAME `demandFor` figures the free check uses,
+  from the same thirty-day cache, so a client's report and the agency's sales
+  page cannot disagree about the size of the market. Absent when the vendor is
+  not configured.
+- A MAP NOBODY COULD READ IS LEFT OUT. The run Serper refused for want of
+  credits finished "done" with nine question marks, and the old report drew it
+  as "0 of 9 points where you appear" — a verdict on the business from searches
+  that never happened. `grid.read` counts the points actually searched; zero
+  read means no map, and every figure is out of `read`, never out of points
+  drawn.
+- "What we did" counts `replied_at`, `posted_at` (posts and photos) and job-log
+  rows `profile saved` / `draft applied` in the last 30 days, with the window
+  in SQL (`make_interval`), never a JavaScript Date.
+- The appendix checklist is flat and open on purpose: the in-app scorecard
+  folds finished groups into <details>, which a printer leaves closed.
+
+THE PDF IS THE PRINT PAGE. `/print/report?t=<pass>` renders the bare `Report`
+(no shell) and is in PUBLIC_PATHS; it admits nothing without a two-minute HMAC
+pass naming one profile (`report-token.ts`, signed with SECRETS_KEY — no secret,
+no PDF). `/api/gbp/report/pdf?profile=` and `/api/gbp/report/print?profile=`
+both authorise through `reportAllowed` (agency: any of its profiles; client:
+only its own) and mint the pass; the first renders it with headless Chromium
+(`pdf.ts`: puppeteer-core + @sparticuz/chromium on Vercel, the installed Chrome
+on this PC) and streams the file, the second redirects the browser to the print
+page with the dialog opening on arrival — the fallback, and also just how you
+print. Both buttons are on both sides.
+
+Two things that bit: the serverless Chromium ships NO FONTS, so the report
+loads Sora and DM Sans itself from Google Fonts and the renderer waits on
+`document.fonts.ready`, or text comes out as boxes; and `printBackground` must
+be asked for or the brand colour vanishes. Both packages are in
+`serverExternalPackages`. Locally a 7-page PDF took about 17 s cold; the route
+has `maxDuration = 60`.
+
+Proven on J's Electrical under Leonardo Power: 970 searches, 370 seen, 2nd of
+49; 5 reviews answered, 2 posts, 6 photos, 8 detail changes; a tampered pass
+refused; 831 KB PDF with the text extractable.
+
