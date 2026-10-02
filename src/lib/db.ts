@@ -7,6 +7,9 @@ const DB_PATH = path.join(process.cwd(), 'data', 'gbp.db');
 function init(): DatabaseSync {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new DatabaseSync(DB_PATH);
+  // Wait for a lock, do not fail on it. A build starts several workers that each open this file
+  // and create the schema at once; on an empty data folder that failed with "database is locked".
+  db.exec('PRAGMA busy_timeout = 10000;');
   db.exec('PRAGMA journal_mode = WAL;');
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(`
@@ -391,6 +394,11 @@ function init(): DatabaseSync {
     // Where to centre a map when Google hands over no pin: worked out from the address once (see geo.ts).
     ['locations', 'geo_json', 'TEXT'],
     ['locations', 'geo_at', 'TEXT'],
+    // Google's own total and average, sent with every page of reviews; only the newest 200 rows are read.
+    ['locations', 'reviews_total', 'INTEGER'],
+    ['locations', 'reviews_avg', 'REAL'],
+    // Whether a map kept the town in its searches, so a re-map can repeat it exactly.
+    ['grid_runs', 'with_town', 'INTEGER'],
   ] as const) {
     const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
     if (!cols.some(c => c.name === col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${ddl}`);

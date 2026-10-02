@@ -85,13 +85,16 @@ export async function searchMarket(q: string): Promise<any[]> {
     if (p1.length) break;
   }
   if (!p1.length && failure) throw failure;   // an error, not an empty market: never cached, retried next run
-  const p2 = p1.length >= 10 ? await placesPage(q, 2).catch(() => []) : [];
+  // A second page that FAILED is not a market of ten. Cached, it hid everyone ranked 11th to 20th
+  // for a day, and any of them read as "not in the first 20". The ten are returned, uncached.
+  let p2: any[] = [], half = false;
+  if (p1.length >= 10) { try { p2 = await placesPage(q, 2); } catch { half = true; } }
   const seen = new Set<string>();
   const all = [...p1, ...p2]
     .filter(p => p?.cid && !seen.has(String(p.cid)) && seen.add(String(p.cid)))
     .map((p, i) => ({ ...p, position: i + 1 }));   // Serper restarts `position` on page 2; use our own
   // Never cache an empty answer: it would pin a transient failure in place for a day.
-  if (all.length) {
+  if (all.length && !half) {
     run(`INSERT INTO serp_cache (key, json, fetched_at) VALUES (?,?, datetime('now'))
          ON CONFLICT(key) DO UPDATE SET json = excluded.json, fetched_at = excluded.fetched_at`, key, JSON.stringify(all));
   }
@@ -133,7 +136,10 @@ function selfFacts(l: LocationRow): { reviews: number; rating: number | null } {
 export function isSelf(p: any, l: LocationRow): boolean {
   if (l.public_cid && String(p.cid) === l.public_cid) return true;
   const v = view(l);
-  const sameName = normName(p.title ?? '', v.town) === normName(v.title, v.town);
+  // A name with no Latin letters normalises to nothing, and nothing equals nothing: any two such
+  // businesses "matched". An empty name is no match.
+  const mine = normName(v.title, v.town);
+  const sameName = mine !== '' && normName(p.title ?? '', v.town) === mine;
   const pc = normPostcode(POSTCODE_RE.exec(p.address ?? '')?.[0] ?? '');
   const samePc = Boolean(pc && v.address.postalCode && pc === normPostcode(v.address.postalCode));
   const samePhone = Boolean(p.phoneNumber && v.phone && normPhone(p.phoneNumber) === normPhone(v.phone));

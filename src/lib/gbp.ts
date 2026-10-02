@@ -247,18 +247,29 @@ export function v4Name(account: string, location: string): string {
 }
 
 export async function listReviews(account: string, location: string, max = 200): Promise<GReview[]> {
+  return (await readReviews(account, location, max)).reviews;
+}
+
+/**
+ * The newest reviews, with Google's own count and average for ALL of them. Only the newest `max`
+ * are read, so counting and averaging the rows said "200 reviews" of a business with 250, and gave
+ * the average of the newest 200 as its rating. Google sends both figures with every page.
+ */
+export async function readReviews(account: string, location: string, max = 200): Promise<{ reviews: GReview[]; total: number | null; average: number | null }> {
   assertLinked(account, 'fetch reviews');
-  if (isMock()) return MOCK_REVIEWS.filter(r => r._location === location);
+  if (isMock()) return { reviews: MOCK_REVIEWS.filter(r => r._location === location), total: null, average: null };
   const out: GReview[] = [];
-  let pageToken = '';
+  let pageToken = '', total: number | null = null, average: number | null = null;
   do {
     const qs = new URLSearchParams({ pageSize: '50', orderBy: 'updateTime desc' });
     if (pageToken) qs.set('pageToken', pageToken);
-    const j = await call<{ reviews?: GReview[]; nextPageToken?: string }>(`${V4}/${v4Name(account, location)}/reviews?${qs}`);
+    const j = await call<{ reviews?: GReview[]; nextPageToken?: string; totalReviewCount?: number; averageRating?: number }>(`${V4}/${v4Name(account, location)}/reviews?${qs}`);
     out.push(...(j.reviews ?? []));
+    if (typeof j.totalReviewCount === 'number') total = j.totalReviewCount;
+    if (typeof j.averageRating === 'number') average = j.averageRating;
     pageToken = j.nextPageToken ?? '';
   } while (pageToken && out.length < max);
-  return out;
+  return { reviews: out, total, average };
 }
 
 /** One review as Google holds it now, or null when Google no longer has it. */

@@ -1,4 +1,5 @@
 import { location, view, isLinked } from '@/lib/locations';
+import { notFound } from 'next/navigation';
 import { locId } from '@/lib/ids';
 import ConfigForm from '@/components/ConfigForm';
 import ReportActions from '@/components/ReportActions';
@@ -9,7 +10,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function ConfigPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const v = view(l);
   const a = agency();
   const form = <ConfigForm l={{

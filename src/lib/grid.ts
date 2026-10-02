@@ -66,7 +66,20 @@ export type GridRun = {
   id: number; location_id: string; ran_at: string; status: 'running' | 'done' | 'error';
   size: number; radius_mi: number; zoom: number; center_lat: number; center_lng: number;
   total: number; done: number; credits: number; visibility: number | null; summary_json: string | null; error: string | null;
+  /** 1 when the searches kept the town, 0 when it was dropped; null on maps made before this was stored. */
+  with_town: number | null;
 };
+
+/**
+ * A map with more than this share of its points unread is not a result. Each point is already
+ * retried three times, so a point that still failed means the search service was not answering.
+ * When it ran out of credits every point failed, the run was stored as "done" with a share of 0%,
+ * and the page and the client report said "Not in the first 20 anywhere on the map". Nobody had
+ * looked. A few failed points are left out of the figures, which is what `summarise` already does.
+ */
+export const MAX_FAILED_SHARE = 0.2;
+/** A scheduled map that could not be read is tried again after this long, not on the next tick. */
+const RETRY_FAILED_MAP_HOURS = 24;
 export type GridPoint = {
   id: number; run_id: number; keyword_id: number | null; phrase: string; query: string;
   row: number; col: number; lat: number; lng: number; position: number | null; total: number; top_json: string | null; error: string | null;
@@ -103,8 +116,17 @@ export function gridPoints(lat: number, lng: number, size: number, radiusMi: num
 export function phoneQuery(phrase: string, town: string): string {
   if (!town) return phrase.trim();
   const t = town.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const q = phrase.replace(new RegExp(`\\s*\\b(in|near|around)?\\s*${t}\\b\\s*`, 'i'), ' ').replace(/\s+/g, ' ').trim();
-  return q || phrase.trim();
+  const tidy = (s: string) => s.replace(/\s+/g, ' ').trim();
+  // "in Bath" is the town. Where the town is also a word ("bath resurfacing in Bath"), taking the
+  // first match removed the product and searched "resurfacing in Bath".
+  const withWord = new RegExp(`\\s*\\b(in|near|around)\\s+${t}\\b\\s*`, 'i');
+  if (withWord.test(phrase)) return tidy(phrase.replace(withWord, ' ')) || phrase.trim();
+  // No "in": the town is the LAST time the word appears ("bath resurfacing Bath").
+  const bare = new RegExp(`\\b${t}\\b`, 'gi');
+  let last = -1, len = 0;
+  for (let m = bare.exec(phrase); m; m = bare.exec(phrase)) { last = m.index; len = m[0].length; }
+  if (last < 0) return phrase.trim();
+  return tidy(phrase.slice(0, last) + ' ' + phrase.slice(last + len)) || phrase.trim();
 }
 
 // ---------------------------------------------------------------- search at a point
@@ -218,8 +240,8 @@ export function startGrid(locationId: string, opts: { size: number; radiusMi: nu
   const town = view(l).town;
   const points = gridPoints(c.lat, c.lng, size, radiusMi);
   const zoom = zoomFor(radiusMi, c.lat);
-  const r = run(`INSERT INTO grid_runs (location_id, status, size, radius_mi, zoom, center_lat, center_lng, total) VALUES (?,?,?,?,?,?,?,?)`,
-    locationId, 'running', size, radiusMi, zoom, c.lat, c.lng, points.length * kws.length);
+  const r = run(`INSERT INTO grid_runs (location_id, status, size, radius_mi, zoom, center_lat, center_lng, total, with_town) VALUES (?,?,?,?,?,?,?,?,?)`,
+    locationId, 'running', size, radiusMi, zoom, c.lat, c.lng, points.length * kws.length, opts.withTown ? 1 : 0);
   const runId = Number(r.lastInsertRowid);
   running.add(runId);
 
@@ -251,6 +273,15 @@ export function startGrid(locationId: string, opts: { size: number; radiusMi: nu
       const gr = one<GridRun>('SELECT * FROM grid_runs WHERE id = ?', runId)!;
       const s = summarise(gr, points_(runId));
       const failed = points_(runId).filter(p => p.error).length;
+      if (jobs.length && failed / jobs.length > MAX_FAILED_SHARE) {
+        const why = points_(runId).find(p => p.error)?.error ?? 'no answer';
+        run(`UPDATE grid_runs SET status = 'error', credits = ?, error = ? WHERE id = ?`, counter.calls * CREDITS_PER_POINT,
+          `${failed} of ${jobs.length} points could not be read (${why}), so this map was not kept. It says nothing about the business: the searches did not run. Check the map again later.`, runId);
+        // The earlier map stays the latest result. A monthly re-map is tried again tomorrow.
+        if (location(locationId)?.next_grid_at) updateConfig(locationId, { next_grid_at: new Date(Date.now() + RETRY_FAILED_MAP_HOURS * 3_600_000).toISOString() });
+        log('grid', 'error', `${failed} of ${jobs.length} points could not be read: ${why}`, locationId);
+        return;
+      }
       run(`UPDATE grid_runs SET status = 'done', credits = ?, visibility = ?, summary_json = ?, error = ? WHERE id = ?`,
         counter.calls * CREDITS_PER_POINT, s.visibility, JSON.stringify(s), failed ? `${failed} point${failed === 1 ? '' : 's'} could not be read` : null, runId);
       updateConfig(locationId, { next_grid_at: new Date(Date.now() + 30 * 86_400_000).toISOString() });
@@ -301,8 +332,12 @@ export function rerunLast(locationId: string) {
   const last = latestDoneGrid(locationId);
   if (!last) throw new Error('No earlier map to repeat');
   const ids = [...new Set(points_(last.id).map(p => p.keyword_id).filter((x): x is number => x != null))];
-  const first = points_(last.id)[0];
-  return startGrid(locationId, { size: last.size, radiusMi: last.radius_mi, keywordIds: ids, withTown: Boolean(first && first.query === first.phrase) });
+  // The wording is what the last map recorded. It used to be guessed from the first point, and a
+  // first search with no town in it ("boiler repair") reads the same either way, so the re-map
+  // kept the town on every other search and the two maps could not be compared.
+  const pts = points_(last.id);
+  const guess = pts.some(p => p.query !== p.phrase) ? false : Boolean(pts[0]);
+  return startGrid(locationId, { size: last.size, radiusMi: last.radius_mi, keywordIds: ids, withTown: last.with_town == null ? guess : Boolean(last.with_town) });
 }
 
 // ---------------------------------------------------------------- map layout (shared by the app and the report)

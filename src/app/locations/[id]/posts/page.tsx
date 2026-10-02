@@ -1,4 +1,5 @@
 import { location, isLinked } from '@/lib/locations';
+import { notFound } from 'next/navigation';
 import { posts } from '@/lib/posts';
 import { locId } from '@/lib/ids';
 import Action from '@/components/Action';
@@ -11,7 +12,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function PostsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const ps = posts(l.id);
   const drafts = ps.filter(p => p.status === 'draft');
   const rest = ps.filter(p => p.status !== 'draft');

@@ -3,6 +3,7 @@ import { json as llmJson } from './llm';
 import { location, updateConfig, view, type LocationRow } from './locations';
 import { createLocalPost, type GLocalPost } from './gbp';
 import { exclusive } from './inflight';
+import { ukInstant, ukParts } from './uktime';
 
 export type PostRow = {
   id: number; location_id: string; summary: string; topic_type: string; cta_type: string | null; cta_url: string | null;
@@ -112,15 +113,13 @@ async function send(id: number): Promise<PostRow> {
   return post(id)!;
 }
 
-/** Next occurrence of the location's chosen weekday and hour, strictly after `from`. */
-export function nextPostAt(l: LocationRow, from = new Date()): string {
-  const d = new Date(from);
-  d.setSeconds(0, 0);
-  d.setHours(l.post_hour, 0, 0, 0);
-  const delta = (l.post_weekday - d.getDay() + 7) % 7;
-  d.setDate(d.getDate() + delta);
-  if (d <= from) d.setDate(d.getDate() + 7);
-  return d.toISOString();
+/** Next occurrence of the location's chosen weekday and hour IN BRITAIN, strictly after `from`. */
+export function nextPostAt(l: Pick<LocationRow, 'post_weekday' | 'post_hour'>, from = new Date()): string {
+  const now = ukParts(from);
+  const delta = (l.post_weekday - now.weekday + 7) % 7;
+  let at = ukInstant(now.year, now.month, now.day + delta, l.post_hour);
+  if (at <= from) at = ukInstant(now.year, now.month, now.day + delta + 7, l.post_hour);
+  return at.toISOString();
 }
 
 /** How long the weekly post waits before trying again when the post could not even be written. */

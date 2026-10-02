@@ -104,6 +104,10 @@ export function start(batchId: number): { started: boolean; reason?: string } {
   const b = batch(batchId);
   if (!b) throw new Error('Unknown batch');
   running.add(batchId);
+  // Nothing in this batch is being audited (it was not running in memory), so a row still marked
+  // "running" was left by an app that stopped part-way. Continue takes only queued rows and Retry
+  // only errors, so that row was never audited again.
+  run(`UPDATE prospects SET status = 'queued' WHERE batch_id = ? AND status = 'running'`, batchId);
   run(`UPDATE prospect_batches SET status = 'running' WHERE id = ?`, batchId);
   (async () => {
     try {

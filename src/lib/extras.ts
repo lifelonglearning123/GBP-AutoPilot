@@ -50,12 +50,22 @@ async function sendPhoto(id: number): Promise<void> {
   }
 }
 
+/** After a photo is refused, the queue waits this long before sending the next one. */
+const RETRY_PHOTO_HOURS = 6;
+
 /** Scheduler hook: release the next queued photo when due, then move the date on. */
 export async function runPhotoSchedule(l: LocationRow): Promise<string | null> {
   if (!l.next_photo_at || new Date(l.next_photo_at).getTime() > Date.now()) return null;
   const next = one<PhotoRow>(`SELECT * FROM photo_queue WHERE location_id = ? AND status = 'queued' ORDER BY id LIMIT 1`, l.id);
   if (!next) { updateConfig(l.id, { next_photo_at: null }); return 'photo queue empty'; }
-  await postPhoto(next.id);
+  try { await postPhoto(next.id); }
+  catch (e) {
+    // One refusal must not use up the queue. The date did not move on a failure, so the next tick,
+    // five minutes later, sent the next photo, and a bad quarter of an hour at Google marked three
+    // photos meant to go out a fortnight apart as failed.
+    updateConfig(l.id, { next_photo_at: new Date(Date.now() + RETRY_PHOTO_HOURS * 3_600_000).toISOString() });
+    throw e;
+  }
   const d = new Date(); d.setDate(d.getDate() + (l.photo_every_days || 14));
   updateConfig(l.id, { next_photo_at: d.toISOString() });
   return `photo #${next.id} posted`;
@@ -89,13 +99,16 @@ export function summary(locationId: string): MetricSummary[] {
   const rows = all<{ day: string; metric: DailyMetric; value: number }>(`SELECT day, metric, value FROM metrics WHERE location_id = ? AND day >= date('now', '-58 days') ORDER BY day`, locationId);
   if (!rows.length) return [];
   const days = [...new Set(rows.map(r => r.day))].sort();
-  const cut = days.length > 28 ? days[days.length - 28] : days[0];
+  // Two periods of 28 calendar days each, counted back from the newest day. The earlier one used
+  // to be "everything before the cut", which was 29 or 30 days, so a flat month read as a fall.
+  const back = (n: number) => { const d = new Date(days[days.length - 1] + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+  const cut = back(27), from = back(55);
   return METRIC_GROUPS.map(g => {
     const mine = rows.filter(r => g.metrics.includes(r.metric));
     const byDay = new Map<string, number>();
     for (const r of mine) byDay.set(r.day, (byDay.get(r.day) ?? 0) + r.value);
     const last28 = [...byDay].filter(([d]) => d >= cut).reduce((s, [, v]) => s + v, 0);
-    const prev28 = [...byDay].filter(([d]) => d < cut).reduce((s, [, v]) => s + v, 0);
+    const prev28 = [...byDay].filter(([d]) => d < cut && d >= from).reduce((s, [, v]) => s + v, 0);
     return { key: g.key, label: g.label, last28, prev28, series: days.filter(d => d >= cut).map(d => byDay.get(d) ?? 0) };
   });
 }

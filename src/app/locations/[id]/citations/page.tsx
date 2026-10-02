@@ -1,4 +1,5 @@
 import { location, view } from '@/lib/locations';
+import { notFound } from 'next/navigation';
 import { canonical, citations, detailsChanged, latestRun, missingDirectories, DIRECTORIES } from '@/lib/citations';
 import type { Canonical } from '@/lib/citations';
 import { locId } from '@/lib/ids';
@@ -12,7 +13,8 @@ const STATUS_PILL: Record<string, string> = { match: 'good', mismatch: 'bad', pa
 
 export default async function CitationsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const v = view(l);
   const c = canonical(v);
   const run = latestRun(l.id);

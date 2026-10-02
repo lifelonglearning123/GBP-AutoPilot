@@ -1722,3 +1722,54 @@ where `/reviews?\b/` had silently stopped matching anything and the check it
 belonged to had been passing for nothing. Patch scripts now go through the
 Write tool with raw strings and assert no `\x08` before writing; and
 `grep -rnP '\x08'` over both trees is worth running after any scripted edit.
+
+## Bug review, 9 to 27 (2026-10-02)
+
+The rest of `docs/bug-review.md`, in this app. All 24 scripts in `docs/repro/`
+pass. This supersedes "9 to 28 are not" above; only 28 is left.
+
+- A FAILED CHECK IS NOT A RESULT, three more places. A map with more than
+  `MAX_FAILED_SHARE` (a fifth) of its points unread is stored as `error`, never
+  `done`, and the earlier map stays the latest result. A citation audit in
+  which most searches failed throws and stores no run. A search check in which
+  every search failed stores no run. Each scheduled one is tried again after a
+  wait (a day, six hours), NOT on the next tick: leaving the date in the past
+  is how the weekly post came to repeat every five minutes.
+- AN INTENT NOBODY JUDGED IS NOT "OK". When the model is down the search is
+  left out of that run (`error`) and judged on the next; it used to be stored
+  as judged ok for good.
+- `readReviews` (gbp.ts) keeps Google's own `totalReviewCount` and
+  `averageRating` in `locations.reviews_total` / `reviews_avg`, and the audit
+  uses them. Only the newest 200 rows are read, so counting rows said 200 of
+  250 and averaged the wrong ones.
+- CITATIONS: a postcode is compared only when the profile has one; the name
+  test in `plausible` works word by word (normName glues the words, so
+  splitting its output never matched anything).
+- `grid_runs.with_town` records the wording; `rerunLast` repeats it. Null on
+  older maps, where the old guess is used.
+- A report's file name carries the business's own id. Public-listing reviews
+  are keyed `<location id>:<review id>`; rows stored the old way are replaced
+  on the next read.
+- `searchMarket` does not cache when page 2 FAILED.
+- Metrics: both periods are 28 calendar days back from the newest day.
+- Matching: `+44` with nine digits after it; `POSTCODE_RE` has word boundaries
+  and refuses "W1 1st Floor"; `phoneQuery` removes "in <town>" or the LAST
+  bare occurrence; an empty normalised name matches nothing.
+- A refused photo rests the queue six hours. A disconnected first Google
+  account is removed from the old one-row table too, so it does not come back
+  at the next start. A prospect row left `running` by a restart is queued
+  again when the batch is continued. Without an AI key only the replies and
+  the weekly post wait; everything else runs.
+- `uktime.ts`: `ukParts`, `ukInstant`. The post hour, the score week and the
+  Pipedream windows are Britain's whatever the server clock.
+- `npm run build` is `next build --webpack`, and passes. `busy_timeout` is set
+  before the schema runs. The eight business pages call `notFound()`.
+
+NOT DONE: 28, the list of things that assume this Windows PC (`set
+NODE_OPTIONS=` in the scripts, `data/` and `output/` beside the app, the
+scheduler inside the web process). They matter only if this app is hosted
+elsewhere, and the header-size flag is proven as it stands. The empty-folder
+build failure (25) was fixed by reading, not reproduced.
+
+Script 19 starts a second process and fails if run with `--tsconfig`; run it
+as `npx tsx docs/repro/19-disconnected-login-returns.test.mts`.

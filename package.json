@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "set NODE_OPTIONS=--max-http-header-size=131072&&next dev --webpack -p 3320",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "set NODE_OPTIONS=--max-http-header-size=131072&&next start -p 3320",
     "typecheck": "tsc --noEmit"
   },

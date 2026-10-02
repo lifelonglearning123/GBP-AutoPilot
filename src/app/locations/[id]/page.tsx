@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { location, view, isLinked, recentChanges, phoneEditBlocked } from '@/lib/locations';
 import { audit } from '@/lib/audit';
 import { suggestions } from '@/lib/suggest';
@@ -28,7 +29,8 @@ const when = (t: string) => new Date(t.replace(' ', 'T') + 'Z').toLocaleString('
  */
 export default async function AuditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const v = view(l);
   const { items, source, coverage, score } = audit(l);
   const linked = isLinked(l);

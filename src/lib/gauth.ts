@@ -1,4 +1,5 @@
 import { all, one, run, getSetting, setSetting, log } from './db';
+import { ukParts } from './uktime';
 
 /**
  * Google OAuth for the single agency account.
@@ -71,6 +72,11 @@ export function disconnect(login?: string) {
   const going = login ? listConnections().filter(c => c.login === login) : listConnections();
   for (const c of going) {
     run('DELETE FROM google_logins WHERE login = ?', c.login);
+    // The old one-row table holds a copy of the FIRST account ever connected, and db.ts copies it
+    // back into google_logins at every start. It used to be cleared only when no login was left,
+    // so disconnecting the first account while a second stayed brought the first back, revoked
+    // token and all, at the next restart.
+    run(`DELETE FROM google_connection WHERE id = 1 AND lower(coalesce(email, 'default')) = lower(?)`, c.login);
     fetch(`${REVOKE}?token=${encodeURIComponent(c.refresh_token)}`, { method: 'POST' }).catch(() => {});
   }
   // The old single-row table is kept in step so a downgrade cannot resurrect a revoked token.
@@ -342,7 +348,7 @@ export async function googleReady(who: 'scheduler' | 'manual'): Promise<{ ok: bo
   if (!viaPipedream() || cachedTokens()) return { ok: true };
   if (who === 'scheduler') {
     const w = pipedreamWindows();
-    if (!w.includes(new Date().getHours())) {
+    if (!w.includes(ukParts().hour)) {
       return { ok: false, why: `waiting for the next Pipedream window (${w.map(h => `${h}:00`).join(' and ')})` };
     }
     const b = pipedreamBudget();

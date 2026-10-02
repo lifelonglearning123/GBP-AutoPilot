@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { location, view } from '@/lib/locations';
 import { locId, locParam } from '@/lib/ids';
 import { keywords as keywordList, latestRun as latestKeywordRun, ranksFor } from '@/lib/keywords';
@@ -12,7 +13,8 @@ export const dynamic = 'force-dynamic';
 export default async function MapPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string }> }) {
   const { id } = await params;
   const { k } = await searchParams;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const v = view(l);
   // Google hands over a pin only when someone placed it by hand, so the position is worked out from
   // the address the first time this tab is opened, and kept.

@@ -35,7 +35,10 @@ export async function tick(opts: { manual?: boolean } = {}): Promise<string[]> {
     // The weekly score is recorded whatever else happens; it needs no Google call.
     try { const n = recordWeeklyScores(); if (n) out.push(`weekly score recorded for ${n} business${n === 1 ? '' : 'es'}`); }
     catch (e: any) { out.push(`score history error ${e.message}`); log('history', 'error', e.message); }
-    if (!hasLLM()) { out.push('skipped: no LLM key'); return out; }
+    // Only the replies and the weekly post are written by the AI. Without a key everything else
+    // still runs: the stats, the photo check and queue, the weekly searches, the monthly map.
+    const ai = hasLLM();
+    if (!ai) out.push('no AI key: review replies and the weekly post are waiting');
     const now = Date.now();
     type Loc = ReturnType<typeof locations>[number];
     const failures = (globalThis.__gbpFailures ??= new Map<string, number>());
@@ -71,11 +74,11 @@ export async function tick(opts: { manual?: boolean } = {}): Promise<string[]> {
         catch (e: any) { out.push(`${l.title}: map error ${e.message}`); }
       }
       if (!isLinked(l) || !google.ok) continue;
-      if (reviewsDue(l)) {
+      if (ai && reviewsDue(l)) {
         try { const r = await withUsage(l.id, 'review replies', () => poll(l.id)); out.push(`${l.title}: reviews ${r.fetched} fetched, ${r.posted} replied`); }
         catch (e: any) { out.push(`${l.title}: reviews error ${e.message}`); log('reviews', 'error', e.message, l.id); }
       }
-      if (l.next_post_at && new Date(l.next_post_at).getTime() <= now) {
+      if (ai && l.next_post_at && new Date(l.next_post_at).getTime() <= now) {
         try { out.push(`${l.title}: post ${await withUsage(l.id, 'weekly post', () => runWeekly(l))}`); }
         catch (e: any) { out.push(`${l.title}: post error ${e.message}`); log('post', 'error', e.message, l.id); }
       }

@@ -1,4 +1,5 @@
 import { location, isLinked } from '@/lib/locations';
+import { notFound } from 'next/navigation';
 import { reviews } from '@/lib/reviews';
 import { locId } from '@/lib/ids';
 import Action from '@/components/Action';
@@ -12,7 +13,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function ReviewsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const rs = reviews(l.id);
   const needs = rs.filter(r => !r.reply_comment && r.draft_status !== 'skipped');
   const done = rs.filter(r => r.reply_comment || r.draft_status === 'skipped');

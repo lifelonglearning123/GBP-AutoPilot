@@ -18,6 +18,7 @@ export type LocationRow = {
   grid_monthly: number; next_grid_at: string | null;
   photos_count: number | null; photos_customer_count: number | null; photos_latest_at: string | null; photos_synced_at: string | null;
   geo_json: string | null; geo_at: string | null;
+  reviews_total: number | null; reviews_avg: number | null;
   hold_low_stars: number;
   created_at: string;
 };

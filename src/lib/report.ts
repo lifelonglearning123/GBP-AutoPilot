@@ -173,7 +173,11 @@ export async function build(locationId: string): Promise<{ data: ReportData; htm
   const html = render(data);
   const dir = path.join(process.cwd(), 'output', 'reports');
   fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, `${slugify(v.title)}-${data.generatedAt.slice(0, 10)}.html`);
+  // The business's own id is in the name. Two businesses called the same thing shared one file,
+  // and the first one's Report link showed the second one's report.
+  const own = slugify(l.id.split('/').pop() ?? l.id);
+  const name = own.startsWith(slugify(v.title)) ? own : `${slugify(v.title)}-${own}`;
+  const file = path.join(dir, `${name}-${data.generatedAt.slice(0, 10)}.html`);
   fs.writeFileSync(file, html, 'utf8');
   updateConfig(l.id, { report_url: file });
   log('report', 'ok', file, l.id);

@@ -143,7 +143,9 @@ async function discover(c: Canonical): Promise<Hit[]> {
   }
   const seen = new Map<string, Hit>();
   const perDomain = new Map<string, number>();
+  let tried = 0, failed = 0, why = '';
   for (const q of queries(c)) {
+    tried++;
     try {
       for (const r of await serper(q)) {
         const u = r.link.split('#')[0];
@@ -158,9 +160,16 @@ async function discover(c: Canonical): Promise<Hit[]> {
       }
     } catch (e: any) {
       if (/SERPER_API_KEY/.test(e.message)) throw e;
+      failed++; why = e.message;
       log('citations', 'error', `search "${q}": ${e.message}`);
     }
     if (seen.size >= 60) break;
+  }
+  // Searches that failed are not searches that found nothing. With the search service down every
+  // one failed, the audit stored "0 listings found", took all fifteen points and listed thirteen
+  // directories as "Not listed on". When most of them fail, no run is kept at all.
+  if (tried && failed > tried / 2) {
+    throw new Error(`${failed} of the ${tried} searches could not be run (${why}), so nothing was recorded. Nothing is wrong with the listings: the search did not happen. Try again later.`);
   }
   return [...seen.values()];
 }
@@ -211,7 +220,12 @@ type Extracted = { relation: Relation; name: string | null; phone: string | null
 function plausible(c: Canonical, text: string): boolean {
   const t = text.toLowerCase();
   const digits = normPhone(text.slice(0, 20000));
-  const nameHit = normName(c.name).split(' ').filter(w => w.length > 2).every(w => t.includes(w));
+  // Word by word. normName removes the spaces, so splitting its output gave the whole name as one
+  // glued word that no page contains, and a listing with an old phone AND an old address, found
+  // only by its name, was thrown away as noise: exactly the listing an audit exists to find.
+  const flat = normName(text.slice(0, 20000));
+  const words = c.name.split(/\s+/).map(w => normName(w)).filter(w => w.length > 2);
+  const nameHit = words.length > 0 && words.every(w => flat.includes(w));
   const phoneHit = c.phoneDigits.length >= 10 && digits.includes(c.phoneDigits);
   const pcHit = c.postcode.length >= 5 && normPostcode(text).includes(c.postcode);
   return nameHit || phoneHit || pcHit;
@@ -251,7 +265,9 @@ function judge(c: Canonical, e: Extracted): { status: CitationRow['status']; iss
   if (phone && normPhone(phone) !== c.phoneDigits) issues.push(`phone ${phone}`);
   if (e.address) {
     const pc = /[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i.exec(e.address)?.[0];
-    if (pc && normPostcode(pc) !== c.postcode) issues.push(`postcode ${pc.toUpperCase()}`);
+    // Only when the profile HAS a postcode: a business that travels to customers has none, and
+    // any postcode differs from an empty one, which marked every listing "Wrong details".
+    if (pc && c.postcode && normPostcode(pc) !== c.postcode) issues.push(`postcode ${pc.toUpperCase()}`);
     else if (!pc && c.postcode) soft.push('no postcode shown');
   }
   if (issues.length) return { status: 'mismatch', issues: [...issues, ...soft] };

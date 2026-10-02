@@ -1,4 +1,5 @@
 import { location, view } from '@/lib/locations';
+import { notFound } from 'next/navigation';
 import { matrix, pages } from '@/lib/site';
 import { locId } from '@/lib/ids';
 import SitePanel from '@/components/SitePanel';
@@ -7,7 +8,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function SitePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const v = view(l);
   const specs = matrix(v);
   const existing = pages(l.id);

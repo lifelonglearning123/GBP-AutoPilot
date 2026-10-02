@@ -1,4 +1,5 @@
 import { location } from '@/lib/locations';
+import { notFound } from 'next/navigation';
 import { get, MIN_RESULTS } from '@/lib/benchmark';
 import { locId } from '@/lib/ids';
 import BenchmarkControls from '@/components/BenchmarkControls';
@@ -12,7 +13,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function CompetitorsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const l = location(locId(id))!;
+  const l = location(locId(id));
+  if (!l) notFound();
   const b = get(l);
   const hasSerper = Boolean(process.env.SERPER_API_KEY);
   const kws = keywords(l.id);

@@ -303,6 +303,9 @@ async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Prom
   return out;
 }
 
+/** After a check in which every search failed, the scheduler waits this long before trying again. */
+const RETRY_FAILED_SEARCHES_HOURS = 6;
+
 export async function runKeywords(locationId: string): Promise<RunSummary> {
   const l = location(locationId);
   if (!l) throw new Error('Unknown location');
@@ -326,6 +329,13 @@ export async function runKeywords(locationId: string): Promise<RunSummary> {
     return { kw, hits, failed, position: hits.find(h => h.isSelf)?.position ?? null };
   });
 
+  // Every search failing is an outage, not a result. It used to be stored as a run with a share of
+  // 0% and the next check put a week away. Nothing is stored, and it is tried again in a few hours.
+  if (searched.every(s => s.failed)) {
+    updateConfig(locationId, { next_keywords_at: new Date(Date.now() + RETRY_FAILED_SEARCHES_HOURS * 3_600_000).toISOString() });
+    throw new Error(`Google could not be read for any of the ${searched.length} searches (${searched[0].failed}), so nothing was recorded. Try again later.`);
+  }
+
   // 2. Intent: thin results are skipped; appearing yourself proves the search is yours; the rest are
   // judged by the model ONCE and the verdict reused. Re-asking every week let the same search flip
   // between "ok" and "wrong", which moved the share with nothing real changing. Editing a phrase
@@ -336,8 +346,13 @@ export async function runKeywords(locationId: string): Promise<RunSummary> {
   const rows = searched.map(s => {
     const c = checks.get(s.kw.phrase.toLowerCase());
     const prior = judged(s.kw) ? (s.kw.intent as 'ok' | 'wrong') : null;
-    const intent: 'ok' | 'wrong' | 'thin' | 'error' = s.failed ? 'error' : s.hits.length < MIN_RESULTS ? 'thin' : s.position ? 'ok' : c?.intent ?? prior ?? 'ok';
-    const note = intent === 'error' ? 'Google could not be read for this search; it is retried on the next run'
+    // A search that needed judging and got no verdict (the model was down) is not "ok". It used to
+    // default to ok and be stored as the permanent judgement, never asked again. It is left out of
+    // this run and judged on the next.
+    const unjudged = !s.failed && s.hits.length >= MIN_RESULTS && !s.position && !c && !prior;
+    const intent: 'ok' | 'wrong' | 'thin' | 'error' = s.failed || unjudged ? 'error' : s.hits.length < MIN_RESULTS ? 'thin' : s.position ? 'ok' : c?.intent ?? prior ?? 'ok';
+    const note = unjudged ? 'This search could not be judged this time; it is judged on the next run'
+      : intent === 'error' ? 'Google could not be read for this search; it is retried on the next run'
       : intent === 'thin' ? `only ${s.hits.length} result${s.hits.length === 1 ? '' : 's'}`
       : c?.note ?? (intent === 'wrong' ? s.kw.intent_note ?? '' : '');
     return { ...s, phrase: s.kw.phrase, intent, note, better: intent === 'wrong' ? c?.better ?? s.kw.suggestion ?? '' : '' };

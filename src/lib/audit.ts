@@ -99,7 +99,7 @@ export function audit(l: LocationRow): { score: number; items: AuditItem[]; sour
   const pinned = Boolean(v.latlng?.latitude);
   add('latlng', 'Map pin', 'Basics', pinned ? 1 : 0,
     !seesProfile ? NO_LISTING
-      : pinned ? 'Placed by hand, so customers are sent to the exact spot.'
+      : pinned ? (source === 'public' ? 'Google Maps shows a position for this listing.' : 'Placed by hand, so customers are sent to the exact spot.')
       : 'Google places this one from the address. It is worth a look on Maps: if the marker is on the wrong door or unit, move it on the Google Business Profile website.',
     'manual', seesProfile && pinned);
   add('primary_category', 'Primary category', 'Basics', v.primaryCategory?.name ? 1 : 0,
@@ -116,8 +116,11 @@ export function audit(l: LocationRow): { score: number; items: AuditItem[]; sour
      FROM reviews WHERE location_id = ?`, l.id,
   ) ?? { n: 0, replied: 0, recent: 0, recentUnreplied: 0, avg: null };
   // Public listing: Google's total and average; the stored rows are only the newest 20.
-  const total = source === 'public' ? (pub!.listing.ratingCount ?? rs.n) : rs.n;
-  const rating = source === 'public' ? pub!.listing.rating : (rs.avg ? Math.round(rs.avg * 10) / 10 : null);
+  // Linked profile: Google's own total and average when it has sent them; the stored rows stop at 200.
+  const total = source === 'public' ? (pub!.listing.ratingCount ?? rs.n) : Math.max(l.reviews_total ?? 0, rs.n);
+  const rating = source === 'public' ? pub!.listing.rating
+    : l.reviews_avg != null ? Math.round(l.reviews_avg * 10) / 10
+    : (rs.avg ? Math.round(rs.avg * 10) / 10 : null);
   const sampled = rs.n > 0;                       // could we read individual reviews at all?
   const hasReviews = total > 0;
 

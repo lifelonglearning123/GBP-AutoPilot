@@ -1,4 +1,5 @@
 import { all, one, run } from './db';
+import { ukParts } from './uktime';
 import { locations } from './locations';
 import { audit, groupTotals } from './audit';
 
@@ -8,9 +9,10 @@ import { audit, groupTotals } from './audit';
  * finished week keeps the score it ended on and the trend reads week by week, not day by day.
  */
 export function weekOf(d = new Date()): string {
-  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
-  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  // The week is Britain's, not the server's: on a server in UTC it began at 01:00 on a summer Monday.
+  const p = ukParts(d);
+  const x = new Date(Date.UTC(p.year, p.month - 1, p.day - ((p.weekday + 6) % 7)));
+  return `${x.getUTCFullYear()}-${String(x.getUTCMonth() + 1).padStart(2, '0')}-${String(x.getUTCDate()).padStart(2, '0')}`;
 }
 
 /** Record this week's score for every business. Cheap: it skips rows refreshed in the last six hours. */

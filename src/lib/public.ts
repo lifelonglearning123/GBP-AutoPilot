@@ -365,7 +365,12 @@ export async function enrich(locationId: string, opts: { cid: string; matchedBy:
     locationId,
   );
 
-  for (const r of reviews) {
+  // Keyed by the business as well as by Google's review id. Keyed by the review id alone, the same
+  // listing added twice (two prospect searches of one town) left the second copy with no reviews
+  // at all, because every row already existed under the first. Rows stored the old way are
+  // replaced; they are a snapshot of the public listing, read again here.
+  run(`DELETE FROM reviews WHERE location_id = ? AND id NOT LIKE ?`, locationId, `${locationId}:%`);
+  for (const r of reviews.map((x: any) => ({ ...x, id: `${locationId}:${x.id}` }))) {
     run(
       `INSERT INTO reviews (id, location_id, reviewer, rating, comment, create_time, update_time, reply_comment, draft_status)
        VALUES (?,?,?,?,?,?,?,?,?)

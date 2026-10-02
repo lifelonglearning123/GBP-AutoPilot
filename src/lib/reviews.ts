@@ -1,7 +1,7 @@
 import { all, one, run, log } from './db';
 import { text as llmText } from './llm';
 import { location, view, type LocationRow } from './locations';
-import { getReview, listReviews, replyToReview, STARS } from './gbp';
+import { getReview, readReviews, replyToReview, STARS } from './gbp';
 import { alertBadReview } from './alerts';
 
 export type ReviewRow = {
@@ -37,7 +37,9 @@ function fresh(createTime: string | null | undefined): boolean {
 export async function poll(locationId: string): Promise<{ fetched: number; newUnreplied: number; posted: number }> {
   const l = location(locationId);
   if (!l) throw new Error('Unknown location');
-  const gs = await listReviews(l.account, l.id);
+  const read = await readReviews(l.account, l.id);
+  const gs = read.reviews;
+  run('UPDATE locations SET reviews_total = ?, reviews_avg = ? WHERE id = ?', read.total, read.average, l.id);
   let newUnreplied = 0, posted = 0;
 
   for (const g of gs) {

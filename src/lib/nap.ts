@@ -9,14 +9,16 @@ export function normPhone(s: string): string {
   // "+44 (0) 1423 814070" carries the trunk zero inside brackets; drop it before counting digits.
   let d = String(s ?? '').replace(/\(\s*0\s*\)/g, '').replace(/\D/g, '');
   if (d.startsWith('0044')) d = d.slice(4);
-  else if (d.startsWith('44') && d.length >= 12) d = d.slice(2);
+  // 44 then nine or ten digits: 0800 800150, 01204 62345 and 016977 3555 have nine after the 0.
+  else if (d.startsWith('44') && d.length >= 11) d = d.slice(2);
   else if (d.startsWith('0')) d = d.slice(1);
   return d ? '0' + d : '';
 }
 
 export const normPostcode = (s: string) => String(s ?? '').toUpperCase().replace(/\s+/g, '');
 
-export const POSTCODE_RE = /[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i;
+/** Whole words only, and never "W1 1st" out of "Suite W1 1st Floor": that is a floor, not a postcode. */
+export const POSTCODE_RE = /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b(?!\s+fl(?:oor|r)?\b)/i;
 
 /** Accents, punctuation, spacing, legal suffixes and (optionally) the town stripped. */
 export function normName(s: string, town = ''): string {
