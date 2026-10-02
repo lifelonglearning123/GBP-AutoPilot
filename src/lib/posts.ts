@@ -2,6 +2,7 @@ import { all, one, run, log } from './db';
 import { json as llmJson } from './llm';
 import { location, updateConfig, view, type LocationRow } from './locations';
 import { createLocalPost, type GLocalPost } from './gbp';
+import { exclusive } from './inflight';
 
 export type PostRow = {
   id: number; location_id: string; summary: string; topic_type: string; cta_type: string | null; cta_url: string | null;
@@ -81,11 +82,19 @@ export function edit(id: number, patch: Partial<Pick<PostRow, 'summary' | 'cta_t
 }
 export function reject(id: number) { run(`UPDATE posts SET status = 'rejected' WHERE id = ?`, id); }
 
-export async function publish(id: number): Promise<PostRow> {
+export function publish(id: number): Promise<PostRow> {
+  // Google makes a new post on every call, so two presses that overlap must not both send.
+  return exclusive(`post:${id}`, 'This post is being published already.', () => send(id));
+}
+
+async function send(id: number): Promise<PostRow> {
   const p = post(id);
   if (!p) throw new Error('Unknown post');
-  // Google makes a new post on every call, so an old tab or a second press must not post it twice.
+  // Only a post still waiting may go out: an old tab or a stale button must not post one twice,
+  // or publish one a person discarded.
   if (p.status === 'posted') throw new Error('This post is already on Google.');
+  if (p.status === 'rejected') throw new Error('This post was discarded, so it was not published.');
+  if (p.status !== 'draft' && p.status !== 'failed') throw new Error('This post is not waiting to be published.');
   const l = location(p.location_id)!;
   const body: GLocalPost = { languageCode: l.language_code ?? 'en-GB', summary: p.summary, topicType: 'STANDARD' };
   if (p.cta_type === 'CALL') body.callToAction = { actionType: 'CALL' };
@@ -114,11 +123,41 @@ export function nextPostAt(l: LocationRow, from = new Date()): string {
   return d.toISOString();
 }
 
-/** Weekly job: generate, publish if on auto, and move the schedule on a week. */
-export async function runWeekly(l: LocationRow): Promise<string> {
-  const p = await generate(l.id);
-  let detail = `drafted #${p.id}`;
-  if (l.auto_post) { await publish(p.id); detail = `published #${p.id}`; }
-  updateConfig(l.id, { next_post_at: nextPostAt(l) });
-  return detail;
+/** How long the weekly post waits before trying again when the post could not even be written. */
+export const REDRAFT_AFTER_HOURS = 6;
+
+/**
+ * Weekly job: generate, publish if on auto, and move the schedule on a week.
+ *
+ * The schedule is moved on whatever happens. It used to move only after a successful publish, so a
+ * post Google refused left the slot in the past and every tick, five minutes apart, wrote a new
+ * post with the AI and sent that too. A refused post is now left as 'failed' for a person to look
+ * at and retry, and the next one is next week's. When the post could not be written at all, the
+ * slot is tried again in a few hours rather than lost for a week.
+ *
+ * The business is read again at each step, never taken from the copy the scheduler made at the
+ * start of its round: a round takes minutes, and a weekly post switched off in that time must not
+ * go out, nor be given a new date.
+ */
+export async function runWeekly(stale: Pick<LocationRow, 'id'>): Promise<string> {
+  const due = location(stale.id);
+  if (!due?.next_post_at || new Date(due.next_post_at).getTime() > Date.now()) return 'not due any more, nothing written';
+  const reschedule = (at: (l: LocationRow) => string) => {
+    const now = location(stale.id);
+    // Still switched on? A schedule switched off meanwhile stays off.
+    if (now?.next_post_at) updateConfig(now.id, { next_post_at: at(now) });
+    return now;
+  };
+
+  let p: PostRow;
+  try { p = await generate(due.id); }
+  catch (e) {
+    reschedule(() => new Date(Date.now() + REDRAFT_AFTER_HOURS * 3_600_000).toISOString());
+    throw e;
+  }
+  const now = reschedule(l => nextPostAt(l));
+  if (!now?.next_post_at) return `drafted #${p.id}; the weekly post was switched off meanwhile, so it was not published`;
+  if (!now.auto_post) return `drafted #${p.id}`;
+  await publish(p.id);
+  return `published #${p.id}`;
 }

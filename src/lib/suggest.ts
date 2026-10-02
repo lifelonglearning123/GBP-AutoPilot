@@ -144,6 +144,11 @@ export function rejectSuggestion(id: number) {
 export async function apply(id: number): Promise<void> {
   const s = one<Suggestion>('SELECT * FROM suggestions WHERE id = ?', id);
   if (!s) throw new Error('Unknown suggestion');
+  // Only a draft still waiting (or one whose save failed) is written. An old tab must not write a
+  // draft a person rejected, or write an applied one over changes made since.
+  if (s.status === 'rejected') throw new Error('This draft was rejected, so it was not written to Google.');
+  if (s.status === 'applied') throw new Error('This draft has already been written to Google.');
+  if (s.status !== 'pending' && s.status !== 'failed') throw new Error('This draft is not waiting to be approved.');
   const l = location(s.location_id);
   if (!l) throw new Error('Unknown location');
   const v = view(l);

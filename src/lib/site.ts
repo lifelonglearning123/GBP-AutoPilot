@@ -246,16 +246,26 @@ details{border:1px solid #e6eaf0;border-radius:8px;padding:10px 14px;margin:8px 
 .cta{background:#f4f7fb;border-radius:12px;padding:24px;margin-top:40px}footer{border-top:1px solid #e6eaf0;padding:28px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;font-size:.95rem;max-width:860px;margin:0 auto}
 footer ul{list-style:none;padding:0;margin:6px 0 0}.hours li{display:flex;justify-content:space-between;gap:12px}`;
 
-/** Write the whole site to output/<slug>/ and return what was written. */
+/**
+ * Write the whole site to output/sites/<slug>/ and return what was written.
+ *
+ * The folder is emptied first, so it must be the site's own and nothing else's. Sites used to be
+ * built straight into output/<name>, with the name taken as typed in Settings: a folder name of
+ * "reports" emptied output/reports, which is every client's report. They now have a parent of
+ * their own, the name is always a slug, and the delete refuses any path that is not directly
+ * inside that parent.
+ */
 export function build(locationId: string, baseUrlOverride?: string): { dir: string; files: string[]; baseUrl: string } {
   const l = location(locationId);
   if (!l) throw new Error('Unknown location');
   const v = view(l);
   const ps = pages(locationId);
   if (!ps.length) throw new Error('No pages generated yet');
-  const slug = v.site_slug || slugify(v.title);
+  const slug = slugify(v.site_slug || v.title);
   const baseUrl = (baseUrlOverride || v.website || `https://${slug}.example`).replace(/\/+$/, '');
-  const dir = path.join(process.cwd(), 'output', slug);
+  const parent = path.join(process.cwd(), 'output', 'sites');
+  const dir = path.join(parent, slug);
+  if (path.dirname(path.resolve(dir)) !== path.resolve(parent)) throw new Error('That folder name cannot be used for a website.');
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   const files: string[] = [];

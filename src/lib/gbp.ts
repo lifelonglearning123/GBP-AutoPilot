@@ -261,6 +261,13 @@ export async function listReviews(account: string, location: string, max = 200):
   return out;
 }
 
+/** One review as Google holds it now, or null when Google no longer has it. */
+export async function getReview(account: string, location: string, reviewId: string): Promise<GReview | null> {
+  assertLinked(account, 'fetch reviews');
+  if (isMock()) return MOCK_REVIEWS.find(r => r.reviewId === reviewId) ?? null;
+  return call<GReview>(`${V4}/${v4Name(account, location)}/reviews/${reviewId}`);
+}
+
 export async function replyToReview(account: string, location: string, reviewId: string, comment: string): Promise<void> {
   assertLinked(account, 'reply to reviews');
   if (isMock()) {

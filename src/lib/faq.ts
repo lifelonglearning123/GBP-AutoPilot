@@ -274,9 +274,10 @@ export const FAQ: FaqSection[] = [
         id: 'reply-modes',
         q: 'Should review replies be automatic?',
         a: [
-          'Each business has its own setting on its **Reviews** tab. **Automatically**: when a new review arrives, the AI writes a reply in the business’s voice and posts it straight away. **After I approve them**: replies are drafted and wait until you approve each one, or all of them at once.',
+          'Each business has its own setting on its **Reviews** tab. **Automatically**: when a new review arrives, the AI writes a reply in the business’s voice and posts it straight away. Only reviews from the last 14 days are answered this way: when a business is first linked, its older unanswered reviews get a draft and wait for you, so years-old reviews are not all answered in one minute. **After I approve them**: replies are drafted and wait until you approve each one, or all of them at once.',
           'In automatic mode, **hold replies to 1 and 2 star reviews** is on by default, so an unhappy customer always gets a reply someone has read. Untick it to reply to every review automatically.',
-          '**Approve and post all** clears a backlog of drafts in one go. It never includes replies to 1 and 2 star reviews: those are approved one by one.',
+          '**Approve and post all** clears a backlog of drafts in one go. It never includes replies to 1 and 2 star reviews: those are approved one by one. It reads the reviews from Google first, so a review the owner has already answered on Google is left alone, and a reply drafted for a review the customer has since edited is thrown away and written again.',
+          'A reply is never posted over one that is already on Google. If the owner answers a review on Google themselves, **Post reply** says so and keeps their words.',
         ],
       },
       {

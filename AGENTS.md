@@ -1615,3 +1615,60 @@ types.ts is only the fallback when no price is stored, and one IS stored.
 Known and not fixable by us: Google's permission screen shows the OAuth
 project's name to an agency's client. The agency's privacy notice says so in
 one sentence without naming it.
+
+## Bug review, the eight that write to Google or delete files (2026-10-02)
+
+`docs/bug-review.md` lists 28 faults in THIS app (not the platform), each with a
+script in `docs/repro/` that fails while the bug is there. Bugs 1 to 8 are
+fixed; 9 to 28 are not. Run one with
+`npx tsx --tsconfig tsconfig.json docs/repro/<name>.test.mts`; each runs in a
+throwaway folder with Google, Serper and the AI replaced by stand-ins.
+
+- REPLIES FOLLOW THE REVIEW (`reviews.ts`). A customer editing a review throws
+  the drafted reply away; a new one is written on the next check. A draft that
+  could not be written is tried again on every check (it used to stay `failed`
+  for ever, so in automatic mode that review was never answered). `post()`
+  reads the review from Google first unless the caller has just read it
+  (`justRead`), because Google keeps ONE reply per review and a second replaces
+  it: the owner's own reply on Google is never overwritten. `postAll` runs a
+  check first and sends only drafts that were on the page when the button was
+  pressed.
+- AUTOMATIC REPLIES ARE FOR NEW REVIEWS: `AUTO_REPLY_FRESH_DAYS` 14, the same
+  limit alerts use. Older unanswered reviews are drafted and wait for a person.
+- THE WEEKLY POST MOVES ON WHATEVER HAPPENS (`runWeekly`). A post Google
+  refuses is left `failed` for a person and the next is next week's; it used
+  to be rewritten by the AI and resent every five minutes. A post that could
+  not be written at all is tried again in `REDRAFT_AFTER_HOURS` 6.
+- THE SCHEDULER READS EACH BUSINESS AT ITS OWN TURN, and `runWeekly` reads it
+  again before publishing and before writing a date. A schedule switched off
+  during a round stays off.
+- ONLY WHAT IS STILL WAITING IS SENT: `publish` takes `draft` or `failed`,
+  `suggest.apply` takes `pending` or `failed`, `postPhoto` takes `queued`.
+- ONE SEND AT A TIME (`inflight.ts`, `exclusive`): posts and photos are claimed
+  in memory before the first await, because Google makes a new one on every
+  call and both of two overlapping calls read the status before either changes
+  it. In memory, not a `sending` status, so nothing is left stuck if the app
+  stops mid-send. This is right for ONE process only.
+- `/api/action` REFUSES OTHER WEBSITES: the request must be JSON and, when the
+  browser names an origin, it must be this app. The scheduler's knock sends no
+  Origin. `/api/auth/google/disconnect` is still a GET that changes things and
+  has no such check.
+- SITES BUILD INTO `output/sites/<slug>`, the folder name is stored as a slug,
+  and the delete refuses anything not directly inside that parent. Before, a
+  folder name of `reports` emptied every client's report. Sites built earlier
+  are still in `output/<name>` and are not moved.
+
+A lesson from doing it: a patch written through a shell heredoc turned `\b`
+in a regular expression into a backspace byte, typecheck passed, and the
+action route refused EVERY request as "not JSON". Only the script for bug 7
+(`24-action-route-cross-site`) caught it, because it also checks that the
+app's own page is let through. A guard needs a test of what it must allow as
+well as what it must refuse.
+
+THE PLATFORM HAS THE SAME FAULTS, read from its code and not yet fixed: a
+draft kept after a review is edited, `postReply` overwriting a reply already
+on Google, automatic replies to every old review on a first poll (when
+automatic was switched on first), no status check in `publishPost`,
+`applySuggestion` or `postPhoto`, no claim before sending, no Origin check on
+`/api/gbp/photos` and `/api/gbp/run`, and `removePhoto` deleting from storage
+whatever path a pasted URL names, which can be another agency's file.

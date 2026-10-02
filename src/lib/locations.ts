@@ -159,6 +159,9 @@ const CONFIG_KEYS = new Set(['brand_voice', 'offered_services', 'service_areas',
 export function updateConfig(id: string, cfg: Config) {
   const keys = (Object.keys(cfg) as (keyof Config)[]).filter(k => CONFIG_KEYS.has(k));
   if (!keys.length) return;
+  // The folder name becomes a folder on disk that is emptied before every build, so it is stored
+  // as a plain slug: no slashes, no dots, nothing that could point anywhere else.
+  if (keys.includes('site_slug')) cfg = { ...cfg, site_slug: String(cfg.site_slug ?? '').trim() ? slugify(String(cfg.site_slug)) : null };
   run(`UPDATE locations SET ${keys.map(k => `${k} = ?`).join(', ')} WHERE id = ?`, ...keys.map(k => cfg[k] ?? null), id);
 }
 

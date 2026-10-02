@@ -134,7 +134,31 @@ const handlers: Record<string, (p: any) => Promise<unknown> | unknown> = {
   'scheduler.auto': () => { void tick().catch(() => {}); return 'started'; },
 };
 
+/**
+ * This route changes things on Google, so it only answers this app's own pages. A browser will
+ * send a cross-site form post here without asking (text/plain, with any JSON in the body), which
+ * let any web page open in the same browser switch automatic replies on or publish a post. Two
+ * checks close that: the request must say it is JSON, which a cross-site page cannot do without
+ * the browser asking first, and when the browser names where the request came from it must be
+ * here. The scheduler's own knock sends no Origin and is let through.
+ */
+function refused(req: Request): string | null {
+  if (!/^application\/json\b/i.test(req.headers.get('content-type') ?? '')) return 'Send JSON.';
+  if ((req.headers.get('sec-fetch-site') ?? 'same-origin') === 'cross-site') return 'This request came from another website.';
+  const origin = req.headers.get('origin');
+  if (origin) {
+    let from = '';
+    try { from = new URL(origin).host; } catch { /* "null" and the like: not us */ }
+    let here = '';
+    try { here = new URL(req.url).host; } catch { /* no usable address */ }
+    if (!from || (from !== req.headers.get('host') && from !== here)) return 'This request came from another website.';
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
+  const no = refused(req);
+  if (no) return NextResponse.json({ error: no }, { status: 403 });
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'Bad JSON' }, { status: 400 }); }
   const h = handlers[body?.action];

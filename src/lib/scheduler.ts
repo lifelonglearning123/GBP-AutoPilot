@@ -1,7 +1,7 @@
 import { log } from './db';
 import { googleReady, viaPipedream } from './gauth';
 import { hasLLM } from './llm';
-import { locations, isLinked } from './locations';
+import { location, locations, isLinked } from './locations';
 import { poll } from './reviews';
 import { runWeekly } from './posts';
 import { runPhotoSchedule, syncMetrics, syncPhotos } from './extras';
@@ -54,7 +54,12 @@ export async function tick(opts: { manual?: boolean } = {}): Promise<string[]> {
     // Only ask for Google access when something is due: through Pipedream each token costs a credit.
     const google = googleDue ? await googleReady(opts.manual ? 'manual' : 'scheduler') : { ok: true as boolean, why: undefined as string | undefined };
     if (!google.ok) out.push(`Google jobs waiting: ${google.why}`);
-    for (const l of locations()) {
+    for (const { id } of locations()) {
+      // Each business is read again at its own turn. A round with several businesses takes minutes,
+      // and working from the copy made at the start meant a setting saved in that time (automatic
+      // replies off, the weekly post off) was ignored for the rest of the round.
+      const l = location(id);
+      if (!l) continue;
       // Weekly search check: tracked clients, linked or hand-added; prospects are created with it off.
       if (keywordsDue(l)) {
         try { const s = await withUsage(l.id, 'searches', () => runKeywords(l.id)); out.push(`${l.title}: searches checked, share ${s.visibility}%`); }

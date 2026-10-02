@@ -1,4 +1,5 @@
 import { all, one, run, log } from './db';
+import { exclusive } from './inflight';
 import { json as llmJson } from './llm';
 import { location, view, updateConfig, type LocationRow } from './locations';
 import { listMedia, customerMediaCount, createPhoto, fetchDailyMetrics, DAILY_METRICS, type DailyMetric } from './gbp';
@@ -26,9 +27,17 @@ export function enqueuePhotos(locationId: string, lines: string, category = 'ADD
 }
 export function removePhoto(id: number) { run(`DELETE FROM photo_queue WHERE id = ? AND status = 'queued'`, id); }
 
-export async function postPhoto(id: number): Promise<void> {
+export function postPhoto(id: number): Promise<void> {
+  // Google adds a new photo on every call, so two presses that overlap must not both upload.
+  return exclusive(`photo:${id}`, 'This photo is being added already.', () => sendPhoto(id));
+}
+
+async function sendPhoto(id: number): Promise<void> {
   const p = one<PhotoRow>('SELECT * FROM photo_queue WHERE id = ?', id);
   if (!p) throw new Error('Unknown photo');
+  // Only a photo still in the queue goes up: an old tab must not add one that is already there.
+  if (p.status === 'posted') throw new Error('This photo is already on Google.');
+  if (p.status !== 'queued') throw new Error('This photo is not waiting in the queue.');
   const l = location(p.location_id)!;
   try {
     await createPhoto(l.account, l.id, p.url, p.category, p.caption ?? undefined);

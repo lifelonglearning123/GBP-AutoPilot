@@ -1,7 +1,7 @@
 import { all, one, run, log } from './db';
 import { text as llmText } from './llm';
 import { location, view, type LocationRow } from './locations';
-import { listReviews, replyToReview, STARS } from './gbp';
+import { getReview, listReviews, replyToReview, STARS } from './gbp';
 import { alertBadReview } from './alerts';
 
 export type ReviewRow = {
@@ -18,6 +18,19 @@ export function review(id: string): ReviewRow | undefined {
 }
 
 /**
+ * Automatic replies only go to reviews Google dates within this many days. A newly linked business
+ * has every old review read as new on its first check, and without a limit switching automatic
+ * replies on answered reviews from years ago, all in one minute. Older ones are still drafted, and
+ * wait for a person. The same limit alerts use (alerts.ts).
+ */
+export const AUTO_REPLY_FRESH_DAYS = 14;
+
+function fresh(createTime: string | null | undefined): boolean {
+  const at = createTime ? Date.parse(createTime) : NaN;
+  return Number.isFinite(at) && Date.now() - at <= AUTO_REPLY_FRESH_DAYS * 86_400_000;
+}
+
+/**
  * Pull reviews, store new ones, draft replies for anything unanswered, and post the drafts
  * straight away when the location is on auto-reply.
  */
@@ -31,6 +44,11 @@ export async function poll(locationId: string): Promise<{ fetched: number; newUn
     const existing = review(g.reviewId);
     const rating = STARS[g.starRating ?? ''] ?? 0;
     const replyComment = g.reviewReply?.comment ?? null;
+    // A customer can edit a review after a reply was drafted for it. The draft answers words that
+    // are no longer there (a thank-you under what is now a complaint), so it is thrown away and a
+    // new one is written on the next check. A skipped review stays skipped.
+    const changed = Boolean(existing) && !replyComment && (existing!.draft_status === 'draft' || existing!.draft_status === 'failed')
+      && ((existing!.comment ?? '') !== (g.comment ?? '') || existing!.rating !== rating);
     run(
       `INSERT INTO reviews (id, location_id, reviewer, rating, comment, create_time, update_time, reply_comment, reply_time, draft_status)
        VALUES (?,?,?,?,?,?,?,?,?, ?)
@@ -41,6 +59,11 @@ export async function poll(locationId: string): Promise<{ fetched: number; newUn
       g.reviewId, l.id, g.reviewer?.isAnonymous ? 'Anonymous' : (g.reviewer?.displayName ?? 'A customer'), rating, g.comment ?? '',
       g.createTime ?? null, g.updateTime ?? null, replyComment, g.reviewReply?.updateTime ?? null, replyComment ? 'posted' : 'none'
     );
+    if (changed) {
+      run(`UPDATE reviews SET draft_status = 'none', draft_reply = NULL, draft_error = NULL WHERE id = ?`, g.reviewId);
+      log('reviews', 'ok', `${g.reviewId}: the review was edited, so its drafted reply was discarded`, l.id);
+      continue;
+    }
     if (!existing) {
       try {
         await alertBadReview(l, {
@@ -49,13 +72,20 @@ export async function poll(locationId: string): Promise<{ fetched: number; newUn
         });
       } catch (e: any) { log('alert', 'error', e.message, l.id); }
     }
-    if (!replyComment && (!existing || existing.draft_status === 'none')) {
-      newUnreplied++;
+    // 'failed' covers two things: the draft could not be written (no draft text), which is tried
+    // again on every check, or the reply could not be sent (draft text kept), which is sent again
+    // only in automatic mode. Before this a review that met the AI on a bad minute was never answered.
+    const undrafted = !existing || existing.draft_status === 'none' || (existing.draft_status === 'failed' && !(existing.draft_reply ?? '').trim());
+    const unsent = existing?.draft_status === 'failed' && Boolean((existing.draft_reply ?? '').trim());
+    // Automatic replies, except 1 and 2 star reviews when the business holds those for a person,
+    // and except reviews too old to count as new.
+    const auto = Boolean(l.auto_reply) && !(Boolean(l.hold_low_stars) && rating <= 2) && fresh(g.createTime);
+    if (!replyComment && (undrafted || (unsent && auto))) {
+      if (undrafted) newUnreplied++;
       try {
-        await draft(g.reviewId);
-        // Automatic replies, except 1 and 2 star reviews when the business holds those for a person.
-        const held = Boolean(l.hold_low_stars) && rating <= 2;
-        if (l.auto_reply && !held) { await post(g.reviewId); posted++; }
+        if (undrafted) await draft(g.reviewId);
+        // The list this review came from was read from Google a moment ago, so it is known to have no reply.
+        if (auto) { await post(g.reviewId, { justRead: true }); posted++; }
       } catch (e: any) {
         run(`UPDATE reviews SET draft_status = 'failed', draft_error = ? WHERE id = ?`, e.message, g.reviewId);
         log('reviews', 'error', `${g.reviewId}: ${e.message}`, l.id);
@@ -100,12 +130,28 @@ export function skip(reviewId: string) {
   run(`UPDATE reviews SET draft_status = 'skipped' WHERE id = ?`, reviewId);
 }
 
-export async function post(reviewId: string): Promise<void> {
+/**
+ * Send the drafted reply. Google keeps one reply per review and a second one REPLACES it, so unless
+ * the caller has just read the review from Google (`justRead`), it is read again first: the owner
+ * may have answered on Google themselves since the last check, and their words are not ours to
+ * overwrite.
+ */
+export async function post(reviewId: string, opts: { justRead?: boolean } = {}): Promise<void> {
   const r = review(reviewId);
   if (!r) throw new Error('Unknown review');
+  if (r.reply_comment) throw new Error('This review already has a reply on Google.');
   const reply = (r.draft_reply ?? '').trim();
   if (!reply) throw new Error('No draft to post');
   const l = location(r.location_id)!;
+  if (!opts.justRead) {
+    const now = await getReview(l.account, l.id, r.id);
+    const theirs = now?.reviewReply?.comment?.trim();
+    if (theirs) {
+      run(`UPDATE reviews SET reply_comment = ?, reply_time = ?, draft_status = 'posted', draft_error = NULL WHERE id = ?`, theirs, now?.reviewReply?.updateTime ?? null, reviewId);
+      log('reply', 'ok', `${r.rating}★ ${r.reviewer}: already answered on Google, nothing sent`, l.id);
+      throw new Error('This review was already answered on Google, so nothing was sent. The reply there has been kept.');
+    }
+  }
   try {
     await replyToReview(l.account, l.id, r.id, reply);
     run(`UPDATE reviews SET reply_comment = ?, reply_time = datetime('now'), draft_status = 'posted', draft_error = NULL WHERE id = ?`, reply, reviewId);
@@ -122,11 +168,19 @@ export async function post(reviewId: string): Promise<void> {
  * reviews are never included: those are approved one by one.
  */
 export async function postAll(locationId: string): Promise<{ posted: number; failed: number; held: number }> {
-  const drafts = reviews(locationId).filter(r => r.draft_status === 'draft' && !r.reply_comment && (r.draft_reply ?? '').trim());
+  // Read the reviews from Google first. The drafts were written at the last check, up to an hour
+  // ago; since then a customer may have edited a review or the owner may have replied on Google,
+  // and this button sends many replies with nobody reading each one. If Google cannot be read,
+  // nothing is sent. Only drafts that were on the page when the button was pressed go out: one
+  // written during this very check has not been seen by anybody yet.
+  const waiting = (rs: ReviewRow[]) => rs.filter(r => r.draft_status === 'draft' && !r.reply_comment && (r.draft_reply ?? '').trim());
+  const shown = new Map(waiting(reviews(locationId)).map(r => [r.id, r.draft_reply]));
+  await poll(locationId);
+  const drafts = waiting(reviews(locationId)).filter(r => shown.get(r.id) === r.draft_reply);
   const held = drafts.filter(r => r.rating <= 2).length;
   let posted = 0, failed = 0;
   for (const r of drafts.filter(r => r.rating > 2)) {
-    try { await post(r.id); posted++; } catch { failed++; }
+    try { await post(r.id, { justRead: true }); posted++; } catch { failed++; }
   }
   log('reply', failed ? 'error' : 'ok', `Posted ${posted} drafted replies at once${failed ? `, ${failed} failed` : ''}${held ? `; ${held} to 1 and 2 star reviews left for approval` : ''}`, locationId);
   return { posted, failed, held };
