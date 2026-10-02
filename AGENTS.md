@@ -1471,3 +1471,49 @@ Proven on J's Electrical under Leonardo Power: 970 searches, 370 seen, 2nd of
 49; 5 reviews answered, 2 posts, 6 photos, 8 detail changes; a tampered pass
 refused; 831 KB PDF with the text extractable.
 
+## The PDF on Vercel, and a link anybody can open (2026-10-02)
+
+TWO HALVES TO SHIPPING A BROWSER. `serverExternalPackages` stops
+@sparticuz/chromium being bundled, and that is only half the job: the 67MB
+`bin/chromium.br` beside it is never `require`d — it is read from disk by path
+at runtime — so Next's tracing had no reason to include it and the deployed
+function had no `bin` directory at all. In production that reads "The input
+directory /var/task/node_modules/@sparticuz/chromium/bin does not exist", and
+locally everything works because node_modules is simply there.
+`outputFileTracingIncludes` names the ONE route, so the binary lands in the
+function that unpacks it and not in every other. Proven by reading
+`.next/server/app/api/gbp/report/pdf/route.js.nft.json` after a build and
+finding chromium.br in it — worth doing again for anything else read by path.
+
+Corrected while there: that Chromium does ship a small `fonts.tar.br`. The
+reason the report loads Sora and DM Sans itself is that THOSE are not in it,
+not that it has none.
+
+A SHARED REPORT. `/r/<token>` is public, renders the same `Report`, and is
+kept out of search engines — a client's figures are theirs to pass on, not
+ours to publish. The link is the credential:
+
+- A ROW (`gbp_report_shares`), not a signed token, because a signed one cannot
+  be WITHDRAWN and a report sent to a client who later leaves is exactly what
+  an agency will want to switch off. Revoking is a timestamp; the row stays so
+  the view count is still readable.
+- One live link per profile. Pressing the button again hands back the same one
+  rather than leaving a second door open that nobody remembers.
+- Built from the request host, so the link is on the AGENCY's domain. A link
+  carrying the platform's address in a client's inbox is the one thing white
+  label exists to prevent.
+- `reportAllowed` again, so a client can share only their own business's
+  report, and both sides have the button.
+- Views are counted, and the counter may never fail the read: somebody opening
+  a link they were sent sees the report even if the count will not move.
+- The shared page has "Save as PDF" calling `window.print()` — there is nobody
+  signed in to render one on the server, and the print styles are already
+  there.
+
+`share-rules.ts` is a LEAF safe for a browser; minting needs `node:crypto` and
+lives in `share.ts`. The client-import check caught this when the share button
+pulled the leaf into a bundle — the same split as photo-rules/photo-store, and
+the check that found it is the one worth keeping green. Its own assertion then
+tripped on the word "node:crypto" inside the comment EXPLAINING the rule, so
+it strips comments first, as the client-pages credits check already does.
+
