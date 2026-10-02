@@ -1772,3 +1772,43 @@ build failure (25) was fixed by reading, not reproduced.
 
 Script 19 starts a second process and fails if run with `--tsconfig`; run it
 as `npx tsx docs/repro/19-disconnected-login-returns.test.mts`.
+
+## Bug review 9 to 27, on the platform (2026-10-02)
+
+Checked against the platform's code. Seven were absent or had no equivalent
+(12, 14, 15, 16, 21, 22, 23). The rest are fixed:
+
+- A MAP WITH MORE THAN A FIFTH OF ITS POINTS UNREAD IS AN ERROR, not `done`
+  (`tooManyUnread` in grid-geometry.ts). Stored `visibility` is worked out
+  from the points that were read; it used to divide by all of them, so a
+  failed point counted as not found. `summary.read` says how many were read.
+- EVERY SEARCH FAILING IS AN ERROR, not a run at 0% on the trend line.
+- A DIRECTORY CHECK WHERE MOST DIRECTORIES ERRORED IS AN ERROR. With no AI key
+  every one errors, and it used to finish `done`, fresh for a month, with the
+  client report saying every listing agreed. The report now also says "We did
+  not find a listing" when none was found.
+- A FAILED MAP OR SEARCH CHECK IS TRIED AGAIN A DAY LATER (daily.ts). Only
+  "done and old enough" started one, so one error meant the monthly map never
+  ran again, silently. The opposite of the local app's loop, same cause: what
+  happens after a failure was never decided.
+- AN INTENT NOBODY JUDGED IS COUNTED THIS RUN BUT NOT REMEMBERED (`settled`).
+  Counting it is the decision already written in `judgeIntent`; writing "ok"
+  to the keyword for good was not.
+- `reviewTotals` reads Google's own count and average; `ratingCount` and
+  `rating` come from those, not from the 200 rows read.
+- `normPhone` strips the country code and the leading zero instead of taking
+  the last ten digits; standard numbers normalise exactly as before, so stored
+  snapshots still compare. `POSTCODE_RE` lives in citations-rules.ts, has word
+  boundaries and refuses "W1 1st Floor". `normName` removes the town as a
+  word ("Bath" no longer comes out of "Bathroom"). An empty name matches
+  nobody in `listingFromLink` and `isUs`.
+- A refused photo rests the queue three days. Metric periods are 28 calendar
+  days each.
+- UK TIME: `src/lib/uktime.ts`. `slotDates`, `weekOf`, the token windows and
+  the SQL in `nextPostAt` (`at time zone 'Europe/London'`) are Britain's.
+  Vercel is UTC, so every slot was an hour late in summer.
+
+`npm run guards` now also checks the `nextPostAt` SQL against the database.
+
+Left: a previous metric period with fewer than 28 days of figures (a newly
+connected profile) is still compared as if it were whole.
