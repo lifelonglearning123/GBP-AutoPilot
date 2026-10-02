@@ -1517,3 +1517,41 @@ the check that found it is the one worth keeping green. Its own assertion then
 tripped on the word "node:crypto" inside the comment EXPLAINING the rule, so
 it strips comments first, as the client-pages credits check already does.
 
+## The agency's nav names the job, and the client's address is the agency's (2026-10-02)
+
+Asked about "Google profiles", "Profiles on Google" and "Google connections"
+sounding alike, and "the client's link" being confusing. Discussed first;
+built after.
+
+THE THREE ITEMS WERE NOT PEERS. A daily working list, an inbox that is empty
+most of the year, and a one-time setup page, all with identical nav slots,
+all naming the noun (Google, profiles) and none naming the job — two of them
+the same three words reordered. Now: **Businesses** (the list; inside one, its
+first tab is still "Profile", so the hierarchy reads), what is waiting to be
+added arrives ON Businesses as a banner only when there is something (the
+page `/agency/gbp/import` still exists, titled "Waiting to be added", reached
+from the banner), and **Google accounts** is a card in Settings pointing at
+`/agency/gbp/connections` (the route is unchanged because the OAuth callback
+lands on it). "Find businesses" became **Find leads** so it could not be
+mistaken for the list. Nav 10 -> 8. A verify check holds that no two nav
+labels share a word.
+
+Found on the way: the dashboard's setup list walked a new agency through
+Stripe, a plan and a client and NEVER told them to connect Google — the thing
+everything else reads from. It is the first step now, and Businesses shows
+"Connect a Google account first" where the work would be when there is none.
+
+"THE CLIENT'S LINK" IS TWO THINGS WEARING ONE NAME. The ADDRESS where clients
+sign in (`clientAddress(agency)`: their verified domain, else the platform's)
+is the agency's and the same for every client. The INVITATION is what gives a
+person an account there. The address used to be prose in the dashboard
+subtitle (uncopyable), and a green box in Settings shown only once a custom
+domain was verified, with "/agency" and "/portal" side by side reading as one
+address twice — and nowhere on the client's own page, which is where anybody
+looks. Now: a "How they sign in" block on the client's page with the address
+and a Copy button, saying plainly when nobody has an account yet that the
+address alone will not let them in; the Settings box always shown, labelled
+by WHO each address is for, copyable; the dashboard line copyable instead of
+a subtitle. The invite form was always there — it is now beside the thing it
+explains.
+
