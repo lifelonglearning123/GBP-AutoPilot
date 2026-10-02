@@ -1376,3 +1376,41 @@ Which agencies have their own GoHighLevel is worth checking before blaming the
 code: only macaws.ai did on 2026-10-02. Agencies connect theirs at
 `/agency/settings`.
 
+## An agency brands the whole thing (2026-10-02)
+
+Colour and logo already existed as TEXT FIELDS — paste a hex, paste a URL you
+host yourself — and there was no favicon at all, so every agency's clients saw
+the platform's icon in the tab beside the agency's own name. Now: a colour
+picker, a logo upload and a favicon upload, at `/agency/settings`.
+
+- ONE COLOUR, deliberately. Every surface derives the rest from it: the
+  shopfront's pale ground is that colour mixed with white, the score bars fill
+  with it, the emails head with it. A palette would let an agency build
+  something that disagrees with itself and would need designing by somebody;
+  one accent cannot be got wrong.
+- `brand-rules.ts` is the pure half (pinned): `tidyHex` TIDIES rather than
+  merely checking, because "4F46E5" and "#4f46e5" are the same intention, and
+  an agency that saved "navy" used to get a brand variable that silently did
+  nothing and a shopfront that fell back to somebody else's indigo.
+  `refuseBrandFile` answers in a sentence they can act on, before anything is
+  uploaded or any old file deleted.
+- `brand-store.ts` is the service-role half and must never be imported by a
+  client component — the same rule as `photo-store.ts`, covered by the same
+  check. Bucket `brand`, public (a favicon is fetched with no session), made by
+  `npm run brand:bucket`.
+- The path carries a timestamp, so a replacement is never waiting on a cache.
+  The old file is removed only AFTER the new one is stored, or a failed upload
+  takes the existing logo with it. Deleting is best-effort and never throws: a
+  replaced logo is already invisible, and losing the new brand to tidy up the
+  old one would be the wrong trade. Proven — the file goes from storage; the
+  public URL still answering 200 afterwards is CDN cache and harmless, because
+  no new upload ever reuses that path.
+- The favicon falls back to the LOGO when unset (`tabIcon`). A wide lockup
+  makes a poor square, but an agency's imperfect icon beats somebody else's
+  perfect one in their own client's browser tab. Set in the root layout's
+  `generateMetadata`, which already chose the title by host.
+- The swatch is a CLIENT component sharing state with the text box
+  (`brand-colour.tsx`). It was first written as a plain input beside the field
+  and posted nothing — a control that looks like it works and does not is worse
+  than only offering the text.
+
