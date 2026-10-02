@@ -1651,8 +1651,7 @@ throwaway folder with Google, Serper and the AI replaced by stand-ins.
   stops mid-send. This is right for ONE process only.
 - `/api/action` REFUSES OTHER WEBSITES: the request must be JSON and, when the
   browser names an origin, it must be this app. The scheduler's knock sends no
-  Origin. `/api/auth/google/disconnect` is still a GET that changes things and
-  has no such check.
+  Origin. `/api/auth/google/disconnect` is a GET, so it checks `Sec-Fetch-Site`: only this app's own pages or the address bar.
 - SITES BUILD INTO `output/sites/<slug>`, the folder name is stored as a slug,
   and the delete refuses anything not directly inside that parent. Before, a
   folder name of `reports` emptied every client's report. Sites built earlier
