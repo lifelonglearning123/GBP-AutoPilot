@@ -1672,3 +1672,53 @@ automatic was switched on first), no status check in `publishPost`,
 `applySuggestion` or `postPhoto`, no claim before sending, no Origin check on
 `/api/gbp/photos` and `/api/gbp/run`, and `removePhoto` deleting from storage
 whatever path a pasted URL names, which can be another agency's file.
+
+## The same eight, fixed on the platform (2026-10-02)
+
+The faults in `docs/bug-review.md` 1 to 8 were in the platform too, and are
+fixed there. The paragraph above saying "not yet fixed" is superseded by this.
+
+- AN EDITED REVIEW LOSES ITS DRAFT. `storeReview` (sync.ts) compares the words
+  and the rating with what was stored, inside the upsert, and sends a `draft`
+  or `failed` review back to `none` with the draft cleared. `skipped` stays
+  skipped, and a reply found on Google settles it whoever wrote it.
+- `postReply` ASKS GOOGLE FIRST when we believe a review is unanswered, unless
+  the caller has just read it (`justRead`, the hourly poll). The owner's own
+  reply is stored and kept, and the person is told nothing was sent. "Replace
+  on Google" is untouched: replacing a reply we KNOW about is a decision.
+- AUTOMATIC REPLIES ARE FOR RECENT REVIEWS: `postsItself` takes the review's
+  date, `AUTO_REPLY_WITHIN_DAYS` 14, and no date means no. In `reply-rules.ts`,
+  a leaf. The poll also retries a reply that failed, which in automatic mode
+  nobody was ever going to notice.
+- SENT ONCE. `gbp_posts.sending_at` and `gbp_photo_queue.sending_at` (migration
+  0035, applied). `claimPost` / `claimPhoto` set it in ONE conditional update
+  and only the request whose update changed a row calls Google. A time, not a
+  flag: a claim older than `SENDING_MINUTES` 5 is a request that died, and is
+  ignored. In memory would not do here; serverless is many processes.
+- ONLY WHAT IS WAITING: `publishPost` refuses a discarded post, `applySuggestion`
+  a dismissed or applied draft, `postPhoto` one already up. `rejectPost` and
+  `rejectSuggestion` no longer re-mark something already on Google.
+- `removePhoto` DELETES THE FILE ONLY AFTER THE ROW, and `storedPathOf`
+  (now in `photo-rules.ts`) believes a URL is ours only when it begins with
+  this project's own public storage address AND sits in the folder of the
+  profile the row belongs to. Before, a pasted line naming another profile's
+  folder would have deleted another agency's photo with the service role.
+- `/api/gbp/photos` and `/api/gbp/run` call `fromThisSite` (same-origin.ts)
+  before anything else. A sibling subdomain is another site.
+- The daily round reads each profile again at its own turn.
+
+`npm run guards` checks the SQL against the real database inside one
+transaction that is rolled back: the upsert's CASE, both claims. `verify`
+cannot, because it is SQL. Seven more checks in verify hold the rest.
+
+Not changed, on purpose: a scheduled post refused BEFORE it is sent (written
+from the CRM, or the Google connection gone) stays a draft and is logged again
+each daily round. That is once a day and names a real thing to fix.
+
+A SHELL HEREDOC EATS `\b`. A regular expression written into a file through
+`python - <<EOF` or a non-raw Python string turned `\b` into a backspace byte
+twice: in the local app's action route today, and in verify.ts some days ago,
+where `/reviews?\b/` had silently stopped matching anything and the check it
+belonged to had been passing for nothing. Patch scripts now go through the
+Write tool with raw strings and assert no `\x08` before writing; and
+`grep -rnP '\x08'` over both trees is worth running after any scripted edit.
