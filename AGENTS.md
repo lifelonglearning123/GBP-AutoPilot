@@ -1555,3 +1555,63 @@ by WHO each address is for, copyable; the dashboard line copyable instead of
 a subtitle. The invite form was always there — it is now beside the thing it
 explains.
 
+
+## White label, second checkpoint: the audience pages and the leak check (2026-10-02)
+
+Every page that sells is one `PageCopy` rendered by one `SalesPage`
+(`src/lib/marketing/`, `src/components/sales-page.tsx`): seven sections, fixed
+order, the brand through one prop and the words through the other. Two
+editions, and the HOST decides which exists (`editions.tsx`):
+
+- PLATFORM edition, `/for-agencies` and `/for-local-seos`: sells the software,
+  on the platform host only. On an agency's address they are a 404 — a client
+  guessing a link must not find a page naming what their agency runs on.
+- AGENCY edition, `/for-business-owners` and `/for-multi-location`: sells the
+  service in the agency's voice on every agency host. On the platform host
+  they redirect to the house agency, or 404 without one.
+- `sitemap.xml` and `robots.txt` are per host; an agency's sitemap never lists
+  the platform's pages. All six paths are in `PUBLIC_PATHS`.
+- Plan cards moved to `plan-cards.tsx`, shared by the shopfront and the
+  audience pages so they cannot disagree about a price.
+
+`npm run leak -- http://<slug>.localhost:<port> [--platform <url>] [--report <url>]`
+reads a RUNNING server and fails on the platform's name, operator, logo,
+favicon, indigo or any vendor in the HTML of anything a stranger can reach
+under an agency — including the pages that 404, because a refusal is still a
+page somebody reads. Run it before a release and after touching a shared
+component. Node will not resolve `<slug>.localhost` on Windows though curl and
+Chrome do, so the script dials 127.0.0.1 with a Host header.
+
+What it found the first time it ran, all fixed:
+
+- `/privacy` and `/terms` on an agency's address were the PLATFORM's: its
+  name, "operated by macaws.ai", and all seven vendors, addressed to agencies.
+  They are different documents now (`privacy/agency.tsx`, `terms/agency.tsx`),
+  written to a local business in the agency's name. Providers are named by
+  what they do and what each receives, never by brand — the law asks for
+  recipients or categories, and the category says more. Both editions make the
+  same claims about the same code and change in the same commit. The agency's
+  terms set NO liability cap and NO governing law: those are the agency's to
+  agree with its client, and an agency should read what is published in its
+  name.
+- An agency that never chose a colour was shown in Pilot indigo.
+  `accentFor()` in brand-rules.ts gives ink (`#111827`, the same as an
+  unbranded report). The in-app `--brand` default in globals.css is still a
+  generic indigo; not changed.
+- The platform's `/signup` named Stripe and said "We take 20%".
+
+ONE PRICE IS DECIDED BUT NOT YET SWITCHED ON. The pages were written for one
+set price and no share of client payments; the database still holds £49 a
+month and a 20% default commission (agencies: 20/15/20/20), and
+`client-billing.ts` still applies `application_fee_percent`. So the share
+travels with the price (`PlatformPrice.shareBps`, `shareLine`): while it is
+above nought the card says "plus 20% of what your clients pay you" and the
+"nothing taken" sentences are not printed, on the home page, the audience
+pages and signup alike. Setting the price and the default commission is done
+at `/admin/pricing`; each existing agency's own rate, and the subscriptions
+already running on it, are changed per agency. `PLATFORM_PRICE` (149 USD) in
+types.ts is only the fallback when no price is stored, and one IS stored.
+
+Known and not fixable by us: Google's permission screen shows the OAuth
+project's name to an agency's client. The agency's privacy notice says so in
+one sentence without naming it.
