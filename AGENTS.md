@@ -1812,3 +1812,38 @@ Checked against the platform's code. Seven were absent or had no equivalent
 
 Left: a previous metric period with fewer than 28 days of figures (a newly
 connected profile) is still compared as if it were whole.
+
+## The business model, decided (2026-10-03)
+
+Two kinds of customer, two ways of paying, one rule shared by both: EVERY
+PROFILE ON A WORKSPACE HAS A PRICE TO WHOEVER RUNS IT, so nobody can give the
+service away and leave the platform paying for the searches and the model.
+
+- AGENCIES, self-serve, the public pages. A monthly platform fee (£49) PLUS a
+  per-client fee (£5 a month for each business on the workspace), and NO share
+  of what their clients pay them. Their clients pay them whatever they charge.
+  The per-client fee covers the cost of goods (a typical client is well under
+  £1 a month in searches and model calls) and is what stops a free client
+  being free to us. "Unlimited clients" is said as "as many as you like, £5
+  each", which is the true version.
+- PARTNERS, invite-only, their own page and an application form, no public
+  price. People with an audience of local businesses: creators, trainers,
+  software vendors. Two kinds, their choice:
+  - OPERATOR: white label under their own brand, paid for by a share (20% of
+    what their clients pay them) with the SAME £5-a-client floor, whichever is
+    more. A partner bundling it free into a course still pays £5 a profile.
+  - REFERRER: their audience signs up with macaws.ai directly; they get a
+    recurring commission on each client they sent. No work, no clients, no
+    floor needed because the client is ours.
+- A billable client is a profile on the workspace (linked to Google or added
+  by hand), counted when the subscription renews; one deleted within the
+  month costs nothing.
+- THE THREE EXISTING AGENCIES ARE CHAO'S OWN and are not touched: whatever
+  rate and subscription they are on stays. New terms apply to agencies that
+  sign up from now on, which the per-agency commission and the "new agencies
+  start on" default already make possible.
+- The narrative is "we help you grow", and the number sits in the same
+  sentence as the story. A page that said "we grow when you grow" with the
+  figures a scroll away would read as hiding them.
+
+Earlier notes about one price and no share (2026-10-02) are superseded.
