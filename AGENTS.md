@@ -1911,3 +1911,16 @@ per-request auth checks (`getUser` in the proxy and in `getAuthUser`) were a
 transatlantic round trip of ~80 ms. A simple page answered in 0.6 to 1.9 s
 before the change. If the database ever moves region, move this with it, and
 check the header after a deploy.
+
+## An unlinked business says how to get it connected (2026-10-03)
+
+`ConnectGoogleCard` (`src/components/connect-google-card.tsx`) shows at the
+top of a business page whenever the profile has no `googleLocationId`, on
+both sides. Agency: who at the client has a login or a pending invitation,
+an invite box (`InviteOwnerForm` → `inviteOwnerStateAction`, answers in
+place and returns the accept link to copy, because the token is never shown
+again), the sign-in address, and the manager route (the owner adds the
+agency's own Google account under People and access, naming the agency's
+connected emails). Client: the Connect Google button
+(`/api/gbp/google/client-start`). Before this the agency looking at an
+unlinked business was told nothing about how to fix it.
