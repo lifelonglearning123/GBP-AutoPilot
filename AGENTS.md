@@ -1901,3 +1901,13 @@ The video is NOT made. Recording the real product under Northgate would show
 empty workspaces (it has no clients), and recording under macaws.ai would put
 real clients' figures and reviews on a public page, which needs their
 consent. Both are the owner's call, as is the voice.
+
+## The server runs in Dublin (2026-10-03)
+
+`vercel.json` pins functions to `dub1`. They ran in `iad1` (Washington, the
+Vercel default, visible as `iad1` in the `X-Vercel-Id` header) while the
+database is Supabase `eu-west-1` (Ireland), so every query and both
+per-request auth checks (`getUser` in the proxy and in `getAuthUser`) were a
+transatlantic round trip of ~80 ms. A simple page answered in 0.6 to 1.9 s
+before the change. If the database ever moves region, move this with it, and
+check the header after a deploy.
