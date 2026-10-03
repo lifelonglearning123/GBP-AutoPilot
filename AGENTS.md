@@ -1847,3 +1847,31 @@ service away and leave the platform paying for the searches and the model.
   figures a scroll away would read as hiding them.
 
 Earlier notes about one price and no share (2026-10-02) are superseded.
+
+## The model, built (2026-10-03)
+
+- `platform_settings.client_price_id` / `client_price_minor`: the fee per
+  business, a Stripe price with `metadata.kind = per_client`, set at
+  `/admin/pricing` (`setClientPrice`). `agencies.billing_model` is `agency`
+  (fee + per-business line) or `partner` (share with the floor, no line), set
+  on the agency's admin page. Migration 0036, applied.
+- `syncClientQuantity` (platform-billing.ts) keeps a second line on each
+  agency's platform subscription whose quantity is `billableProfiles` — every
+  profile on the workspace — with `proration_behavior: "none"`, so the count
+  at renewal is what the month costs. The daily round runs it for every
+  agency with a live subscription. A workspace with no businesses has no line.
+- LIVE SETTINGS, set 2026-10-03: new agencies start on 0% commission; the
+  per-business price is £5 (`price_1UMLr1...`, test mode). The monthly price
+  found stored was £149, not the £49 discussed; it was NOT changed — it is the
+  admin's figure and the pages read whatever it is.
+- The pages say the WHOLE cost in one sentence (`costSentence`): the monthly
+  fee, the fee per business, and either the share or "we take none of it".
+  The signup table takes the per-business fee off the worked example.
+- `/for-partners` is the platform edition (404 on an agency host), with
+  `PartnerTerms` where a price would be: operator (20% or £5 a business,
+  whichever is more) and referrer (20% of what each business they sent pays
+  us). The form writes `partner_applications` (RLS listed) before emailing
+  the platform contact; `/admin/partners` lists them. NOT BUILT YET: referral
+  tracking and statements, and the operator floor's monthly reckoning
+  (floor × profiles − share collected). Both are stated on the page as
+  terms; build them before the first partner is live.
