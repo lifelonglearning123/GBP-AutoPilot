@@ -1924,3 +1924,20 @@ agency's own Google account under People and access, naming the agency's
 connected emails). Client: the Connect Google button
 (`/api/gbp/google/client-start`). Before this the agency looking at an
 unlinked business was told nothing about how to fix it.
+
+## Directories by industry (2026-10-03)
+
+`src/lib/gbp/directory-rules.ts` decides which directories a business's
+listings check covers: `CORE` (11 every local business needs) plus the
+`SETS` its Google categories match (trades, beauty, health, food, stay,
+motor, legal, finance), with `only` rules inside a set (Save Face for
+aesthetics clinics, NHS for practices and pharmacies, OpenTable for sit-down
+restaurants). Words match whole words, plurals allowed; a trailing `*` is a
+stem. `planFor(profile)` adds the business's own switches
+(`gbp_profiles.directory_choices`, migration 0037), set from the panel on the
+Listings tab on both sides. A run's size is its own rows (`runSize`), never
+the catalogue. Prospects are matched on the batch's search query.
+
+Every directory was proved with a `site:` search for public listing pages
+before it went in. Do the same before adding one: a directory whose listings
+are not public will always read "not listed", which would be false.
