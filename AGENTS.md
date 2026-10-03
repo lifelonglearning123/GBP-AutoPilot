@@ -1861,9 +1861,13 @@ Earlier notes about one price and no share (2026-10-02) are superseded.
   at renewal is what the month costs. The daily round runs it for every
   agency with a live subscription. A workspace with no businesses has no line.
 - LIVE SETTINGS, set 2026-10-03: new agencies start on 0% commission; the
-  per-business price is £5 (`price_1UMLr1...`, test mode). The monthly price
-  found stored was £149, not the £49 discussed; it was NOT changed — it is the
-  admin's figure and the pages read whatever it is.
+  per-business price is £5 (`price_1UMLr1...`, test mode). THE PUBLISHED
+  MONTHLY PRICE IS £149, deliberately (decided 2026-10-03): the figure the
+  pages show is the list price, and discounting is done with codes from
+  `/admin/coupons`, which agencies type at checkout. A platform code is tied
+  to the monthly fee's product, so it never discounts the per-business line.
+  The signup example starts at two clients, where the fixed cost has begun to
+  stop mattering.
 - The pages say the WHOLE cost in one sentence (`costSentence`): the monthly
   fee, the fee per business, and either the share or "we take none of it".
   The signup table takes the per-business fee off the worked example.
