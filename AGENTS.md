@@ -1875,3 +1875,25 @@ Earlier notes about one price and no share (2026-10-02) are superseded.
   tracking and statements, and the operator floor's monthly reckoning
   (floor × profiles − share collected). Both are stated on the page as
   terms; build them before the first partner is live.
+
+## See it in your brand (2026-10-03)
+
+`BrandTryout` (`src/components/brand-tryout.tsx`), the first section after
+the platform home's hero. The visitor types their agency's name, picks a
+colour and a pair of faces from the brand allow-list, and drops in a logo;
+four drawn screens redraw at once: the client portal, the sales page on
+their domain, the report, the browser tab with the sign-in page. Everything
+is in the browser: the logo is read to a data URL and never uploaded, nothing
+calls a server, nothing spends. It starts as Northgate Digital so the first
+thing seen is an agency's brand, never ours. Figures on the screens are the
+report's one real month (970 / 370 / 2nd of 49), captioned "example".
+
+It is the white-label section: the claim beside it is the leak check ("no
+page a client can reach names this platform, and we test every release for
+that"), and the FAQ names the two seams — Google's permission screen and the
+guide PDF — rather than leaving an agency to find them.
+
+The video is NOT made. Recording the real product under Northgate would show
+empty workspaces (it has no clients), and recording under macaws.ai would put
+real clients' figures and reviews on a public page, which needs their
+consent. Both are the owner's call, as is the voice.
