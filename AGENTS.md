@@ -1970,3 +1970,45 @@ This PC's `node_modules` had only the ARM64 esbuild while Node is x64, so
 `tsx` and `drizzle-kit` failed; the x64 binary was unpacked beside it (both
 versions: root 0.25.12, tsx's own 0.28.2). Git has no global identity here;
 commit with `-c user.name="chao liu" -c user.email="chao@macaws.ai"`.
+
+## The sales bot's way in, and the free trial (2026-10-04)
+
+A separate app (`C:\Python\GBP Assistant Promotor`) writes to agencies and
+sells them the platform. It reaches the platform three ways, all in
+`src/lib/bot/`, all errs-closed:
+
+- `/api/bot/sample` and `/api/bot/claim-link`, behind `BOT_API_KEY`
+  (`x-api-key`) and the PLATFORM host only (404 on an agency host). A sample
+  is the free check run on the HOUSE agency's allowance with `{ bot: true }`
+  (skips the visitor/agency brakes; own cap `SAMPLES_PER_DAY` 300), written
+  under `BOT_VISITOR`, which is excluded from the house page's daily count and
+  its leads list. Kept in `bot_samples`, shown at `/preview/<token>` in the
+  PROSPECT agency's name, logo and colour with the offer beneath. The preview
+  names the platform, so it must never render on an agency host. Views come
+  from a 2-second client beacon (`/preview/<token>/seen`) so mail scanners do
+  not count.
+- A signed claim link (`signClaim`/`readClaim`, 30 days, keyed off
+  `BOT_API_KEY`) pre-fills `/signup`, applies the suggested colour and logo
+  only if Settings would accept them, stores `agencies.outreach_ref`, and
+  lands in `/agency/gbp` instead of Checkout. A failed form keeps the claim.
+- Events to `BOT_WEBHOOK_URL`, HMAC-signed with `BOT_WEBHOOK_SECRET`, ONLY
+  for agencies with an `outreach_ref` (or the bot's own samples):
+  `sample.viewed`, `agency.signed_up`, `free_audit.used`,
+  `subscription.changed` (real status changes only, from
+  `syncAgencyPlatformSubscription`).
+
+THE FREE TRIAL (`free-trial-rules.ts`, pinned): an agency on
+`platform_unsubscribed` may hold three businesses and three clients, for
+EVERY agency that has not paid, not only the bot's. Every way a business
+arrives asks `mayAddBusiness` first (by hand, from a link, a client created
+with a link, claimed from Google, `adoptLocation`); verify checks each one
+does. The console shows "n of 3 free audits used". Before this an unpaid
+agency could add no clients at all, so could audit nothing. Lapsed agencies
+(`platform_unpaid`) are locked out as before, not on a trial.
+
+Migration 0039 (`bot_samples`, `agencies.outreach_ref`); `bot_samples` is in
+the RLS backstop. This PC's `.env.local` points at the PRODUCTION database,
+and Preview deployments run migrations with production settings: never push
+a branch with a migration expecting a safe preview. The x64 `lightningcss`
+and `@tailwindcss/oxide` binaries were unpacked beside the ARM64 ones so
+`next build` runs here.
