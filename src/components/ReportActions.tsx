@@ -17,7 +17,7 @@ export default function ReportActions({ id, reportUrl, pushedAt, ghlReady, show 
     catch (e: any) { setMsg(e.message); } finally { setBusy(''); }
   }
   async function push() {
-    if (!window.confirm('Create/update the contact in GHL, upload the report and add a note (and an opportunity if a pipeline is set)?')) return;
+    if (!window.confirm('Create/update the contact in Nexus Portal, upload the report and add a note (and an opportunity if a pipeline is set)?')) return;
     setBusy('ghl'); setMsg('');
     try {
       const r = await callAction<{ contactId: string; reportUrl: string | null; opportunityId: string | null }>('ghl.push', { id });
@@ -32,12 +32,12 @@ export default function ReportActions({ id, reportUrl, pushedAt, ghlReady, show 
         {show !== 'ghl' && reportUrl && <a className="btn" href={view} target="_blank" rel="noopener">View report</a>}
         {show !== 'ghl' && <button className="btn" onClick={build} disabled={Boolean(busy)}>{busy === 'report' ? 'Building…' : reportUrl ? 'Rebuild report' : 'Build report'}</button>}
         {show !== 'report' && (
-          <button className="btn" onClick={push} disabled={Boolean(busy) || !ghlReady} title={ghlReady ? undefined : 'Add the GoHighLevel details on Settings first'}>
-            {busy === 'ghl' ? 'Sending…' : pushedAt ? 'Send to GoHighLevel again' : 'Send to GoHighLevel'}
+          <button className="btn" onClick={push} disabled={Boolean(busy) || !ghlReady} title={ghlReady ? undefined : 'Add the Nexus Portal details on Settings first'}>
+            {busy === 'ghl' ? 'Sending…' : pushedAt ? 'Send to Nexus Portal again' : 'Send to Nexus Portal'}
           </button>
         )}
       </div>
-      {(msg || (show !== 'report' && pushedAt)) && <div className="text-xs muted max-w-md text-right">{msg || `In GoHighLevel since ${pushedAt!.slice(0, 16).replace('T', ' ')}`}</div>}
+      {(msg || (show !== 'report' && pushedAt)) && <div className="text-xs muted max-w-md text-right">{msg || `In Nexus Portal since ${pushedAt!.slice(0, 16).replace('T', ' ')}`}</div>}
     </div>
   );
 }

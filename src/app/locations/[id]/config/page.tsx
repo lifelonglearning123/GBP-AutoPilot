@@ -31,11 +31,11 @@ export default async function ConfigPage({ params }: { params: Promise<{ id: str
       <section aria-labelledby="admin-h" className="max-w-[900px] flex flex-col gap-4">
         <div>
           <h2 id="admin-h" className="text-xl font-semibold">Reports and records</h2>
-          <p className="text-sm muted mt-1.5 max-w-prose">Send this business and its latest report to GoHighLevel, or take it out of the app.</p>
+          <p className="text-sm muted mt-1.5 max-w-prose">Send this business and its latest report to Nexus Portal, or take it out of the app.</p>
         </div>
         <div className="panel p-5 flex items-center justify-between gap-4 flex-wrap">
           <div className="text-sm">
-            <div className="font-medium">Send to GoHighLevel</div>
+            <div className="font-medium">Send to Nexus Portal</div>
             <p className="muted mt-0.5 max-w-prose">Creates or updates the contact, uploads the report and adds a note.</p>
           </div>
           <ReportActions id={l.id} reportUrl={l.report_url} pushedAt={l.ghl_pushed_at} ghlReady={Boolean(a.ghl_token && a.ghl_location_id)} show="ghl" />

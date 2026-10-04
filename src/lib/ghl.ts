@@ -18,7 +18,7 @@ const VERSION = '2021-07-28';
 
 function headers(extra: Record<string, string> = {}) {
   const a = agency();
-  if (!a.ghl_token || !a.ghl_location_id) throw new Error('GHL is not configured. Add the sub-account location id and a Private Integration token on Settings.');
+  if (!a.ghl_token || !a.ghl_location_id) throw new Error('Nexus Portal is not configured. Add the sub-account location id and a Private Integration token on Settings.');
   return { Authorization: `Bearer ${a.ghl_token}`, Version: VERSION, Accept: 'application/json', ...extra };
 }
 
@@ -26,7 +26,7 @@ async function api<T = any>(pathname: string, init: RequestInit = {}): Promise<T
   const res = await fetch(`${API}${pathname}`, { ...init, headers: { ...headers(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(init.headers ?? {}) } });
   const text = await res.text();
   const json = text ? (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })() : {};
-  if (!res.ok) throw new Error(`GHL ${res.status}: ${json?.message ?? json?.error ?? text.slice(0, 200)}`);
+  if (!res.ok) throw new Error(`Nexus Portal ${res.status}: ${json?.message ?? json?.error ?? text.slice(0, 200)}`);
   return json as T;
 }
 
@@ -81,7 +81,7 @@ export async function push(locationId: string, opts: { pipelineId?: string; stag
     }),
   });
   const contactId: string = contact?.contact?.id ?? contact?.id;
-  if (!contactId) throw new Error('GHL did not return a contact id');
+  if (!contactId) throw new Error('Nexus Portal did not return a contact id');
 
   const failing = items.filter(i => !i.ok && !i.unknown).map(i => `- ${i.label}: ${i.note}`);
   const note = [
@@ -125,8 +125,8 @@ export async function push(locationId: string, opts: { pipelineId?: string; stag
  */
 export async function notifyBadReview(l: LocationRow, a: { title: string; detail: string; rating: number }): Promise<{ status: 'sent' | 'skipped'; detail: string }> {
   const ag = agency();
-  if (!ag.ghl_token || !ag.ghl_location_id) return { status: 'skipped', detail: 'GoHighLevel is not set up on Settings.' };
-  if (!l.ghl_contact_id) return { status: 'skipped', detail: 'Not pushed to GoHighLevel yet, so there is no contact to add the alert to.' };
+  if (!ag.ghl_token || !ag.ghl_location_id) return { status: 'skipped', detail: 'Nexus Portal is not set up on Settings.' };
+  if (!l.ghl_contact_id) return { status: 'skipped', detail: 'Not pushed to Nexus Portal yet, so there is no contact to add the alert to.' };
   const due = new Date(Date.now() + 24 * 3_600_000).toISOString();
   await api(`/contacts/${l.ghl_contact_id}/tasks`, {
     method: 'POST',
@@ -139,5 +139,5 @@ export async function notifyBadReview(l: LocationRow, a: { title: string; detail
   });
   await api(`/contacts/${l.ghl_contact_id}/notes`, { method: 'POST', body: JSON.stringify({ body: `${a.title}:\n\u201c${a.detail}\u201d` }) });
   log('ghl', 'ok', `Bad-review task and note added for ${l.title}`, l.id);
-  return { status: 'sent', detail: 'Task and note added to the contact in GoHighLevel.' };
+  return { status: 'sent', detail: 'Task and note added to the contact in Nexus Portal.' };
 }

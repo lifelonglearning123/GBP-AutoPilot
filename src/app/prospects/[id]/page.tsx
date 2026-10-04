@@ -51,7 +51,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
                     {p.status === 'queued' && <Action action="prospects.skip" params={{ id: p.id }} className="btn sm">Skip</Action>}
                     {p.status === 'skipped' && <Action action="prospects.unskip" params={{ id: p.id }} className="btn sm">Queue</Action>}
                     {p.location_id && <a className="btn sm" href={`/api/report/${encodeURIComponent(p.location_id)}`} target="_blank" rel="noopener">Report</a>}
-                    {p.location_id && ghlReady && <Action action="ghl.push" params={{ id: p.location_id }} className="btn sm primary" busy="Pushing…" confirm="Push this business and its report into GHL?">GHL</Action>}
+                    {p.location_id && ghlReady && <Action action="ghl.push" params={{ id: p.location_id }} className="btn sm primary" busy="Pushing…" confirm="Push this business and its report into Nexus Portal?">Nexus Portal</Action>}
                   </div>
                 </td>
               </tr>

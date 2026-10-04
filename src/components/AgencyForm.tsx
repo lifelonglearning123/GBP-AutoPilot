@@ -40,7 +40,7 @@ export default function AgencyForm({ a }: { a: A }) {
       </section>
 
       <section className="panel p-5 flex flex-col gap-3">
-        <h2 className="font-semibold">GoHighLevel</h2>
+        <h2 className="font-semibold">Nexus Portal</h2>
         <p className="text-xs muted">Sub-account → Settings → Private Integrations → create one with contacts, opportunities and medias scopes. Each push upserts a contact, uploads the report to the Media Library, adds a note, and creates an opportunity if a stage is chosen.</p>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="field">Sub-account location id</label><input type="text" value={f.ghl_location_id} onChange={e => set('ghl_location_id', e.target.value)} /></div>

@@ -4,9 +4,9 @@ import type { AlertRow } from '@/lib/alerts';
 import { locParam } from '@/lib/ids';
 
 const GHL: Record<string, string> = {
-  sent: 'Also added to GoHighLevel as a task.',
+  sent: 'Also added to Nexus Portal as a task.',
   skipped: '',
-  error: 'Could not add it to GoHighLevel.',
+  error: 'Could not add it to Nexus Portal.',
 };
 
 /** New bad reviews, each with a way to answer it and a way to clear it. */

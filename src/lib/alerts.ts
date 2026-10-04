@@ -34,7 +34,7 @@ export async function alertBadReview(l: LocationRow, r: { id: string; rating: nu
     run('UPDATE alerts SET ghl_status = ?, ghl_detail = ? WHERE id = ?', out.status, out.detail, id);
   } catch (e: any) {
     run('UPDATE alerts SET ghl_status = ?, ghl_detail = ? WHERE id = ?', 'error', e?.message ?? String(e), id);
-    log('alert', 'error', `GoHighLevel: ${e?.message ?? e}`, l.id);
+    log('alert', 'error', `Nexus Portal: ${e?.message ?? e}`, l.id);
   }
   return true;
 }

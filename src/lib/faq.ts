@@ -285,7 +285,7 @@ export const FAQ: FaqSection[] = [
         q: 'How do I hear about bad reviews?',
         a: [
           'When a check finds a new 1 or 2 star review written in the last 14 days, it shows at the top of the dashboard, on the business’s Reviews tab, and as a red dot beside the business in the sidebar, until you mark it as seen. Older reviews found the first time a business is linked do not raise alerts.',
-          'If the business has been pushed to GoHighLevel, the alert is also added to its contact there as a task due the next day, with a note carrying the review. Businesses not yet in GoHighLevel get the in-app alert only.',
+          'If the business has been pushed to Nexus Portal, the alert is also added to its contact there as a task due the next day, with a note carrying the review. Businesses not yet in Nexus Portal get the in-app alert only.',
           'Alerts arrive when reviews are checked: hourly on our own Google connection, and whenever you press **Check for new reviews**.',
         ],
       },
