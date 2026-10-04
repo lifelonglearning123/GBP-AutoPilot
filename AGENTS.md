@@ -1941,3 +1941,32 @@ the catalogue. Prospects are matched on the batch's search query.
 Every directory was proved with a `site:` search for public listing pages
 before it went in. Do the same before adding one: a directory whose listings
 are not public will always read "not listed", which would be false.
+
+## Each agency can have its own fee per business (2026-10-04)
+
+The published fee per business (`/admin/pricing`) is the default. Each
+agency's admin page can override it: THEIR OWN RATE (agreed with them, not
+published — Growtth ai at £1.50), NOTHING (the house agencies), and a number
+of businesses INCLUDED before the fee starts. `agencies.client_fee_minor`
+(null = published, 0 = nothing), `client_fee_price_id`, `clients_included`;
+migration 0038. The rule is `client-fee-rules.ts`, a pinned leaf.
+
+- Saving makes the Stripe price ON THE KEY THE SERVER RUNS ON, so a live
+  agency's rate is set on the live site. It updates the subscription at once
+  with no proration (next renewal's bill); the daily round keeps the count.
+- An own rate with no price behind it is billed as NOTHING, never at the
+  published fee: charging the list price to somebody promised another is the
+  worse mistake.
+- Production Stripe is LIVE (every agency subscription is `livemode`), but
+  the published per-business price saved on 2026-10-03 was made in TEST, so
+  no per-business fee had been charged to anyone. Re-save it on the live site.
+- Two of the house agencies (Leonardo Power, Artificial Ignorance) DO have
+  live platform subscriptions; set them to Nothing before any live
+  per-business price exists, or they start paying it.
+- Clients never see any of this: the fee is on the agency's subscription with
+  the platform, and clients are billed by the agency's own connected Stripe.
+
+This PC's `node_modules` had only the ARM64 esbuild while Node is x64, so
+`tsx` and `drizzle-kit` failed; the x64 binary was unpacked beside it (both
+versions: root 0.25.12, tsx's own 0.28.2). Git has no global identity here;
+commit with `-c user.name="chao liu" -c user.email="chao@macaws.ai"`.
