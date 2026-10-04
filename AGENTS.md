@@ -2061,3 +2061,23 @@ shared by both pages.
 - First real result: Ayur Aesthetics is 11th for "beauty salon wembley" with
   432 reviews, level with the top three, same category. Reviews were not the
   gap, which is exactly the kind of answer this exists to give.
+
+## Spending limits (2026-10-04)
+
+A month of the whole platform cost about £1.75 (maps half of it; all AI
+together ~14p). The risk is repeats and bugs, not normal use: one business
+had a map run 22 times in a day.
+
+- SEVEN DAYS, no override for anyone (Chao). `startKeywordRun` and
+  `startGridRun` throw `StillFresh` when the same question was answered by a
+  finished run within `FRESH_DAYS`: every active search covered, or the same
+  phrase/size/radius/wording for a map. The actions treat it as information
+  and print when a fresh one is possible. It must never pose as a new check.
+- DAILY CEILINGS in `allowance.ts`: 30p per business, £5 per platform, UK day,
+  in pence so tokens count. `guardSpend(agency, client, profile)` refuses past
+  them and emails the platform contact once a day per scope (job-log row is
+  the claim). Guards check at the START of a run; a map already going
+  finishes. Pass the profile to every guard that has one; verify walks it.
+- The £5 platform ceiling is a constant. As agencies grow, normal daily
+  rounds will approach it: raise it (or move it to /admin/pricing) before it
+  becomes the thing that stops real work.
