@@ -2012,3 +2012,20 @@ and Preview deployments run migrations with production settings: never push
 a branch with a migration expecting a safe preview. The x64 `lightningcss`
 and `@tailwindcss/oxide` binaries were unpacked beside the ARM64 ones so
 `next build` runs here.
+
+## Where you show up prints no cost, to anybody (2026-10-04)
+
+SUPERSEDES "MapPanel takes an audience. The agency keeps the credits AND the
+zoom". Chao: never show it again. The agency's visibility page no longer
+prints the search cost note, "N points x 1 search = N Google Maps checks,
+about N search credits", the allowance used, or the paragraph under the map
+with credits used and map zoom. Both sides say the same neutral words, and
+the `audience` prop on `MapPanel`/`MapRunForm` is gone. A verify check holds
+the two visibility pages, map-panel, map-run-form and keyword-picker to no
+credits, no allowance and no zoom. The allowance is still enforced
+(`guardSpend`) and still set and shown on the agency's CLIENT page.
+
+`core.autocrlf=true` here, and some working copies come out CRLF. Several
+verify checks cut a function at "\n}\n", which never matches CRLF, so they
+read to the end of the file and fail for nothing ("must never redirect").
+Normalise the working copies to LF before blaming code: git sees no change.
