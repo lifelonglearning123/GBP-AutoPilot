@@ -2039,3 +2039,25 @@ money ("This month's checks for this business are used up. They start again
 on the 1st.") because they reach the portal raw. A verify check walks every
 agency and portal page. The agency still sees ITS OWN bill (`/agency/billing`)
 and the commission on its client subscriptions: those are what it pays.
+
+## Head to head (2026-10-04)
+
+On "Where you show up", both sides, for the open search: the business beside
+the TOP THREE when it ranks outside them (Chao: "if ranked low, I want the
+top 3"), or the THREE JUST BELOW when it is in the pack. `head-to-head-rules.ts`
+is the pinned leaf; `head-to-head.ts` reads and builds; `HeadToHeadPanel` is
+shared by both pages.
+
+- It names where they DIFFER, never why anybody ranks higher, and only when
+  most of the three share the difference. The name is information, never a
+  task. Distance is reported, never offered: searches run from the business's
+  own address, so "they are further away and still above you" is the point.
+- A rival's details (listing, newest reviews, home page headings) sit in
+  `gbp_competitors.profile.detail` for a week, shared. The weekly category
+  read in `rivalProfile` MERGES into that row; replacing it wiped the detail.
+- Spending: the main search's three are read at the end of every search check
+  (`guard: false`, the run is already allowed); other searches have "Look at
+  them closely", which asks `guardSpend`. Opening the page spends nothing.
+- First real result: Ayur Aesthetics is 11th for "beauty salon wembley" with
+  432 reviews, level with the top three, same category. Reviews were not the
+  gap, which is exactly the kind of answer this exists to give.
