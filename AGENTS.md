@@ -2029,3 +2029,13 @@ credits, no allowance and no zoom. The allowance is still enforced
 verify checks cut a function at "\n}\n", which never matches CRLF, so they
 read to the end of the file and fail for nothing ("must never redirect").
 Normalise the working copies to LF before blaming code: git sees no change.
+
+Same day, further: THE AGENCY IS NOT SHOWN THE CHARGES EITHER. Only the
+platform admin sees what searches and AI cost. The "Searches and AI this
+month" card and the per-client allowance moved from `/agency/clients/[id]`
+to `/admin/agencies/[id]` (`setClientAllowanceAdminAction`, audited); the
+agency's `setClientAllowanceAction` is gone. `mayStart` refusals name no
+money ("This month's checks for this business are used up. They start again
+on the 1st.") because they reach the portal raw. A verify check walks every
+agency and portal page. The agency still sees ITS OWN bill (`/agency/billing`)
+and the commission on its client subscriptions: those are what it pays.
