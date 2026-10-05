@@ -2081,3 +2081,27 @@ had a map run 22 times in a day.
 - The £5 platform ceiling is a constant. As agencies grow, normal daily
   rounds will approach it: raise it (or move it to /admin/pricing) before it
   becomes the thing that stops real work.
+
+## Spend, for the platform admin (2026-10-05)
+
+`/admin/spend` (`src/lib/data/spend.ts`): estimated search + AI cost by day,
+week or month (UK calendar, earlier/later), the last 30 days as stacked bars,
+every agency with spend, businesses connected, spend per business, what it
+pays and the margin; agency -> clients (+ "Sales and prospecting" for spend
+with no client: free checks, lead searches, the bot's samples on the house
+agency) -> businesses and what the money went on. Ceiling days flagged.
+
+- `gbp_usage_log.cost_minor` (migration 0041) is written by `recordUsage` at
+  the rates of the moment, so a rate change never reprices history; older
+  rows fall back to today's rates in SQL.
+- "They pay" is Stripe's `invoices.createPreview` of the platform
+  subscription (discounts and per-business line included), held 10 min per
+  process, shared over the period, plus `platform_fees` in the period. On
+  this PC the test key cannot read live subscriptions, so it says "Stripe
+  did not say"; production has the live key.
+- Admin only; verify fails if an agency, portal or shared component imports
+  spend.ts.
+- .gitignore's unanchored `data/` also matched `src/lib/data/`, so a NEW file
+  there was silently never committed (spend.ts nearly shipped missing, which
+  would have failed the deploy). Anchored to `/data/`. If a new file "does
+  not show" in git status, run `git check-ignore -v <file>`.
