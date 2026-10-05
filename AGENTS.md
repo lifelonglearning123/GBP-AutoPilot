@@ -2105,3 +2105,24 @@ agency) -> businesses and what the money went on. Ceiling days flagged.
   there was silently never committed (spend.ts nearly shipped missing, which
   would have failed the deploy). Anchored to `/data/`. If a new file "does
   not show" in git status, run `git check-ignore -v <file>`.
+
+## Outside bots kept off the free check; a short claim link (2026-10-05)
+
+- The free check is the one thing a stranger can make the platform spend on.
+  Every action behind it (search, search by link, score, guide request) asks
+  `looksAutomated` (`bot-guard-rules.ts`, a pinned leaf) BEFORE anything is
+  searched, and refuses a request that fills a hidden trap field, arrives
+  under `MIN_MS` (1.5 s) after the page appeared, or has a crawler, script or
+  headless-browser user agent (or none). The refusal is `QUIET_NO`, the
+  ordinary polite sentence, never "you look like a bot"; each is logged. The
+  trap field's name is one no autofill recognises, so a person's browser
+  never fills it.
+- Our own sales bot is untouched: it calls `/api/bot/sample` with its key and
+  never comes through the form.
+- `/c/<sample token>` (`src/app/c/[token]/route.ts`) is the short claim link
+  the bot puts in its emails. The signed signup link is several hundred
+  characters, untidy in a plain email and a mark against it with spam
+  filters, so this redirects (302) to the `claimUrl` stored with the sample,
+  or to `/signup` for an unknown token. It does not count as a look at the
+  sample. `/c` is in `PUBLIC_PATHS`; matching is exact or `/c/...`, so it
+  does not open `/clients`.
