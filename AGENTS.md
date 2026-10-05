@@ -2126,3 +2126,16 @@ agency) -> businesses and what the money went on. Ceiling days flagged.
   or to `/signup` for an unknown token. It does not count as a look at the
   sample. `/c` is in `PUBLIC_PATHS`; matching is exact or `/c/...`, so it
   does not open `/clients`.
+
+## A platform admin viewing an agency can connect its Google (2026-10-06)
+
+The admin view (`VIEW_AS_COOKIE`, `adminViewing` in session.ts) acts as the
+agency's owner on every page, and Connect Google pressed there signs the
+state for that agency. The callback still demanded a profile of the admin's
+OWN in the agency, so it refused with "That account cannot connect Google for
+this workspace" (Growtth ai). It now also accepts a platform admin currently
+viewing the agency the state names (`adminViewingAgencyId`), for AGENCY
+connections only; a client's own connection still needs that client's admin.
+The job log adds "(by the platform admin)". When doing this, pick the
+agency's Google login at Google's chooser: our own would put our clients'
+listings in their "Waiting to be added" pile.
