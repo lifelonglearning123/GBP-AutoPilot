@@ -2171,7 +2171,11 @@ the `chao@macaws.ai` connection from Growtth's workspace.
   else was invited first (Chao: both are logins). Nothing is sent when that
   address is already a member or has a live invitation; an agency user's
   address is skipped; it never throws inside the webhook. Only the billing
-  email on the client record is used, not an address typed at Stripe checkout.
+  email on the client record is used. ALSO, `handleConnectCheckoutCompleted`
+  reads `session.customer_details.email` (what the payer typed): it becomes the
+  billing email when there was none, and gets a login either way. Before each
+  payment link `ensureClientCustomer` updates the Stripe customer's email so
+  checkout prefills the current address.
 - The payment gate is `requirePaidClientUser()` (session.ts): every portal
   business page, the report, `ownProfile` (so every portal action on a
   business), and `workspaceUser()` returns null for an unpaid client, which
