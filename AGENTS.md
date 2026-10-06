@@ -2139,3 +2139,25 @@ connections only; a client's own connection still needs that client's admin.
 The job log adds "(by the platform admin)". When doing this, pick the
 agency's Google login at Google's chooser: our own would put our clients'
 listings in their "Waiting to be added" pile.
+
+## Reviews are read the moment a business is linked (2026-10-06)
+
+Ayur Aesthetics (432 reviews) showed none for an hour after linking: only the
+hourly poll read reviews, and the portal had no button to read them.
+
+- `checkReviews` (poll.ts) is the ONE way reviews are read: the hourly poll,
+  linking, and both "Read reviews from Google" buttons. A read that only
+  stored reviews would mark them seen, and the poll would then never alert on
+  the one-star among them. verify fails if an action calls `syncReviewsFor`.
+- `checkReviewsNow(profileId)` runs on every way a business gets linked (Read
+  profiles via `SyncResult.linkedIds`, claiming from the waiting list,
+  `readAndSuggest`, the portal's listing choice). It never throws: linking has
+  already succeeded and the hourly poll is behind it.
+- The Reviews tab on both sides has the button, a `Submit` that shows it is
+  working (`clientSyncReviewsAction` mirrors `syncReviewsAction`).
+
+Also 2026-10-06: Ayur was linked through `chao@macaws.ai` from the admin view,
+which put six of our own clients' listings in Growtth's waiting list; they were
+dismissed (dismissed rows are never un-hidden by a later read). The proper fix
+is Growtth's own Google account as a manager on Ayur's listing, then removing
+the `chao@macaws.ai` connection from Growtth's workspace.
