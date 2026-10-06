@@ -2161,3 +2161,24 @@ which put six of our own clients' listings in Growtth's waiting list; they were
 dismissed (dismissed rows are never un-hidden by a later read). The proper fix
 is Growtth's own Google account as a manager on Ayur's listing, then removing
 the `chao@macaws.ai` connection from Growtth's workspace.
+
+## The billing email is a login; an unpaid client is gated everywhere (2026-10-06)
+
+- Paying never made a login (Ayur Aesthetics paid Growtth and had no way in).
+  `ensureBillingLogin` (`src/lib/billing/billing-login.ts`) runs from
+  `upsertClientSubscription` whenever a subscription is paid up or in grace,
+  and invites `clients.billing_email` as client_admin, WHETHER OR NOT somebody
+  else was invited first (Chao: both are logins). Nothing is sent when that
+  address is already a member or has a live invitation; an agency user's
+  address is skipped; it never throws inside the webhook. Only the billing
+  email on the client record is used, not an address typed at Stripe checkout.
+- The payment gate is `requirePaidClientUser()` (session.ts): every portal
+  business page, the report, `ownProfile` (so every portal action on a
+  business), and `workspaceUser()` returns null for an unpaid client, which
+  covers photos, run progress, report PDF/print and sharing. Before paying a
+  client may sign in, see the overview and billing, pay, connect Google
+  (`client-start`, `clientClaimListingAction`), and manage their team.
+  Before this only three pages checked and the actions never did. verify
+  walks every portal page, action and API route.
+- An unpaid client sees `SubscriptionNeeded` ("Your account is ready ... opens
+  as soon as ... paid"), and an invitation sent before payment says the same.
