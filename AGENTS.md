@@ -2223,3 +2223,33 @@ the `chao@macaws.ai` connection from Growtth's workspace.
   ("installer"). A site showing only its home page is UNKNOWN, never failed.
   `websiteCheckNow` lives in the lib, NOT in a server-actions file: anything
   exported from one is callable from a browser with ids of its own.
+
+## The business overview, in the owner's order (2026-10-07)
+
+Chao asked for a simpler overview for non-technical owners, with charts in
+HubSpot's manner. Decisions: keep the score ruler visible (once, last),
+details on their own tab, gains in words not points, one-word tabs.
+
+- Order on BOTH overviews: `CustomerFigures` (period picker 7/28/90 scoping
+  everything; headline; four tiles with `DeltaPill`; inline `TrendChart`
+  with the period before dashed), `StandingCard` + `ReviewsCard`, drafts
+  only while waiting, `NextSteps`, `DetailsLine`, then the verdict + ruler
+  with the checklist folded. verify pins the order and that the score badge
+  appears once.
+- `overview-rules.ts` is the pure half: `split` (calendar days back from the
+  newest day Google answered for; `before` only when a WHOLE earlier period
+  exists, so a quarter has no comparison on 92 days of history; a gap is a
+  gap), `delta` (null under five before), `gainWord` (8+/3+), `headline`,
+  `detailsLine`. Rounding is `roughly` from demand-rules, one rule everywhere.
+- `TrendChart` measures its container (ResizeObserver) and draws at that
+  width; a viewBox stretched with preserveAspectRatio="none" squashed every
+  tick label on a phone. Every value is also in a `<details>` table.
+- `/details` tab (both sides) holds `BasicsForm` and the drafts; next-step
+  buttons and the draft actions' redirects point there. `#photos` is on the
+  posts tab (the old anchor pointed at nothing). metrics-panel.tsx and
+  metric-chart.tsx are gone.
+- Previewing without a session: render the components with
+  `renderToStaticMarkup`, compile globals.css with `@tailwindcss/node`
+  `compile().build(classes)`, screenshot with the installed Chrome via
+  puppeteer-core (scratch script, not committed). No hydration, so
+  ResizeObserver and hover cannot be checked that way; only the live page.
