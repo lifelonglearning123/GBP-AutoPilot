@@ -2253,3 +2253,22 @@ details on their own tab, gains in words not points, one-word tabs.
   `compile().build(classes)`, screenshot with the installed Chrome via
   puppeteer-core (scratch script, not committed). No hydration, so
   ResizeObserver and hover cannot be checked that way; only the live page.
+
+## The agency's home page is Today (2026-10-07)
+
+Chao asked for a clean, modern, non-technical dashboard in HubSpot's manner.
+Decisions: the sign-in address comes off the home page (Settings and the
+client's page keep it); the free-check leads table moves from Businesses to
+Find leads (`LeadsTable`), the newest three on the home page; the platform
+fee is on Payments only; the greeting is "Good morning, <first name>".
+
+- `src/app/agency/page.tsx` order, pinned: setup line (until done), "Needs you
+  today" (`needsRows` in `today-rules.ts`: one row per thing with a button,
+  only above zero, bad reviews first, leads last), three tiles (clients,
+  businesses, collected vs the 30 days before), `CustomerFigures` summed
+  across every business (`agencyMetricsSummary` in `src/lib/data/today.ts`,
+  same component as the overview with `title` and `scope`), "Businesses to
+  look at" (`toLookAt`: waiting, then the bigger FALL, then the lower score;
+  a rise is not a reason), newest leads.
+- `todayFor` never calls out; verify tests its IMPORTS, not its prose (a
+  comment saying "never calls Serper" tripped a word match).
