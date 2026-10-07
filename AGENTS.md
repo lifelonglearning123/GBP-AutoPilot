@@ -2186,3 +2186,40 @@ the `chao@macaws.ai` connection from Growtth's workspace.
   walks every portal page, action and API route.
 - An unpaid client sees `SubscriptionNeeded` ("Your account is ready ... opens
   as soon as ... paid"), and an invitation sent before payment says the same.
+
+## Rivals' reviews, checks that run themselves, the website check (2026-10-07)
+
+- RIVALS' REVIEWS (`review-themes.ts`, rules in `review-themes-rules.ts`): the
+  newest 50 reviews of the leaderboard's top 3 (not one search's), beside the
+  client's own newest 50, monthly. The model only labels themes and points at
+  review ids; counts and quotes are worked out from the reviews, invented ids
+  dropped, a theme needs 3+ reviews over 2+ rivals. Praise, complaints (shown
+  to agency AND client, decided) and what customers bought. Rival reviews are
+  cached 30 days on `gbp_competitors.profile.reviewSet`, merged, never empty,
+  no reviewer names. Serper gives 20 a page: ~9 credits a business a month.
+  Stored on `gbp_profiles.review_insight`; panel under head to head, summary
+  in the report.
+- FIRST LOOK (`onboard.ts`): any business never searched gets searches
+  (suggested if none), a map of the main search (5x5, 1 mi, with town),
+  the website check and rivals' reviews from the hourly `gbp-carry` sweep,
+  one per sweep, claimed via `first_look_at`. Trial businesses included.
+- WEEKLY (daily round): searches, map (the monthly tick-box is gone), website
+  check weekly and rivals' reviews monthly, for PAID-UP clients only
+  (`clientPaidUp`, now one copy in `src/lib/billing/client-paid.ts`). The
+  round covers hand-added businesses too; only Google steps need a link.
+  `StillFresh` from a button pressed that week is not an error.
+- `gbp-carry` is hourly (was every 10 minutes). Allowance per client £1.50.
+- WEBSITE CHECK (`website-check.ts`, rules in `website-check-rules.ts`,
+  table `gbp_site_checks` under RLS): a page per tracked search, the plan's
+  service/area pages (8 + 5, the rest as one line), name/phone/postcode vs
+  Google (page or schema), basics per page, PageSpeed (needs
+  `PAGESPEED_API_KEY` in Vercel or it reads unknown), repeated pages, and an
+  AI read per search page. Each check compared with the last (fixed / new /
+  still), score over time, clicks and positions shown BESIDE the work, never
+  as its result. Learnt on live sites: read whole pages (Wix runs past 1MB),
+  find sitemaps via robots.txt, only the title or h1 makes a page about a
+  search, strip the brand from the end of titles, compare word endings not
+  5-letter roots ("electrician" is not "electrical"), ignore role words
+  ("installer"). A site showing only its home page is UNKNOWN, never failed.
+  `websiteCheckNow` lives in the lib, NOT in a server-actions file: anything
+  exported from one is callable from a browser with ids of its own.
