@@ -2305,3 +2305,28 @@ showed two flat lists side by side, and two lists read as two ideas.
 - The Businesses nav item is gone (verify: "Businesses" must NOT be a nav
   label). Prose that said "the Businesses page" now says "the Clients page".
 - The portal is unchanged: a client only ever saw its own businesses.
+
+## A payment link can be sent by hand (2026-10-14)
+
+Chao asked for a manual option beside emailing a client's payment link. The
+only way was an email through the agency's own GoHighLevel, and the link
+itself was shown only when that email had FAILED, so an agency with no CRM
+connected (two of the three) or a client only reached on WhatsApp had no way
+to send one at all.
+
+- `PaymentLinkForm` (`src/components/payment-link-form.tsx`) on the client's
+  page: the plan, then "Email it to <billing email>" and "Get a link to send
+  myself". One action behind both, `checkoutLinkStateAction` (`how` is
+  `email` or `copy`), answering under the box with the link on EVERY path
+  that made one (by hand, emailed, email failed): Copy, Open, and the URL
+  printed. `sendCheckoutLinkAction` is gone; verify pins that, the
+  no-redirect, and that only emailing needs a billing email.
+- A link sent by hand needs no billing email. The email button is not shown
+  without one and the box says why: whoever pays types their email at
+  Stripe's checkout and `handleConnectCheckoutCompleted` makes it the billing
+  email and a login (the 2026-10-06 rule). That is also the only way a client
+  created without a billing email gets one: there is still no edit for it.
+- Every press makes a fresh Checkout session (24 hours); a link made to send
+  by hand is audited as `checkout.link_made`.
+- No portal counterpart: sending a client their own payment link is the
+  agency's work, and the client picks a plan from Billing in the portal.
