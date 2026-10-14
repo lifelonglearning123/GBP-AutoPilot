@@ -2377,3 +2377,56 @@ took the whole queue in one request, and nobody found it.
   as it was: queued, uncaptioned, with a box to type into. Removing a video
   removes its still. Google takes the caption on a video as `description`
   with `mediaFormat: VIDEO`, the same field as a photo.
+
+## One plan for posts and photos, the day fixed, published on the hour (2026-10-14)
+
+Chao asked to think through the post, picture and video schedules so they
+read clearly to a business owner. Two faults came out of the reading first:
+
+- THE POST DAY WAS IGNORED. The Settings form saved it as a number (Monday =
+  1) and `slotDates` wanted the word, and `dayOf` cast between them, so
+  `DAYS.indexOf(2)` was -1 and every scheduled business had its whole queue
+  on SUNDAYS; only a business with no day set got the Tuesday default. The
+  tests never saw it because they only ever passed words. `weekdayOf` in
+  queue-rules.ts is now the one rule (number or word, else null) and
+  `slotDates` takes either; pinned with numbers.
+- THE TIME WAS COSMETIC. Nothing published except the daily round at 07:20
+  UTC, so "Tuesday 9am" went out Wednesday morning, and the Time menu (7am
+  to 7pm) was hours nothing could honour. `publishWhatIsDue` (due.ts) runs
+  from the hourly `gbp-carry` sweep, only for businesses with something due;
+  `publishDue` keeps ONE A DAY (`ONE_A_DAY_HOURS` 20, measured on the last
+  posted) and leaves CRM posts out of the question, so hourly never clears a
+  backlog or logs a refusal twenty-four times. The daily round still calls
+  the same two functions; both are idempotent.
+
+Then the shape:
+
+- ONE PLAN LINE on the Posts tab, both sides (`SchedulePlan`): "A post every
+  Tuesday at about 9am, and a photo every two weeks, on the same day." Change
+  opens the three controls in place; `setScheduleStateAction` /
+  `clientSetScheduleStateAction` save through `tidyPlan` (pinned) and
+  `savePlan`, which RE-DATES the waiting posts onto the new day's slots and
+  the next photo onto the first of them. The schedule and the photo spacing
+  are gone from Settings and from the photo grid; Settings keeps the notes
+  (`PostNotes`). "Not scheduled" is gone: there is always a plan, and which
+  posts go is decided per post by approving it. The "publish automatically"
+  flag is no longer written. `post-schedule.tsx` and the unused
+  `post-calendar.tsx` are deleted.
+- PHOTOS RIDE THE POST DAY, every one, two or four weeks (`PHOTO_WEEKS`;
+  `photo_every_days` keeps 7/14/28, older values snap via `photoWeeksOf`).
+  The stored `next_photo_at` is snapped onto the post day and hour before it
+  counts as due (`slotOnOrAfter`), the first photo is dated onto the next
+  post slot rather than `now()`, and after one goes the next is a cadence of
+  post days on and never in the past (`nextPhotoSlotAfter`). So a video or a
+  photo goes up with the post, at the hour the plan says.
+- ONE TIMELINE. `queueFor` lays the waiting photos onto the weeks they are
+  due (`photoDates`, `layOutPhotos`, in the order they were added) and the
+  queue row shows the photo under the post with the same marks: Ready, or "A
+  photo is due this week and none is waiting" with a link to the grid. The
+  header says how many photos are waiting and how far they go, or when the
+  next photo day is. The photo grid says "the next goes up <date>, then every
+  two weeks with the post".
+
+`npm run guards` was NOT run (it reads the production env file); the new SQL
+is `make_interval(hours => N)` and a `::timestamptz` text, both forms already
+in use elsewhere.
