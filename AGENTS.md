@@ -2430,3 +2430,34 @@ Then the shape:
 `npm run guards` was NOT run (it reads the production env file); the new SQL
 is `make_interval(hours => N)` and a `::timestamptz` text, both forms already
 in use elsewhere.
+
+## A week whose post went out early is free again (2026-10-15)
+
+R&B's queue showed 20 and 27 Oct empty, "6 ready to go out by 15 Dec, then
+2 empty weeks". "Fill the empty weeks" (2) wrote ONE post and stopped with
+"The next eight weeks are already full". Read from the arithmetic: the two
+weeks' posts had gone out early with "Publish now", so they left the queue
+(posted) but kept their scheduled dates, and `freeDates` counted every
+non-rejected post's date as taken, posted ones included. It also looked one
+slot PAST the eight weeks shown, so the one post it did write went to 15
+Dec, out of sight, and the health line said "by 15 Dec" while the list ended
+8 Dec. The second call found nothing.
+
+- `holdsSlot(status)` in queue-rules.ts: a draft or a refused post holds its
+  week; a posted or rejected one does not. `freeSlots` is the pure search and
+  never answers a date outside the ones it is given.
+- `freeDates` fills only the weeks the page shows, unless `{ beyond: true }`:
+  the button fills the weeks on screen and says "already full" only when they
+  are. A post written by hand, or a loose draft being dated, must land
+  somewhere and may go beyond; `addOwnPost` returns `{ id, date, beyond }`
+  and the action says "Added for 22 Dec, after the weeks shown".
+- `Queue.beyond` / `lastSlot`: posts dated after the weeks shown are counted
+  and the header says "1 more post is dated after 8 Dec, and will come into
+  view as the weeks pass", so a post out of sight is never a post that
+  vanished.
+- The count offered beside "Fill the empty weeks" is cut to the empty weeks
+  (never more), and defaults to all of them.
+
+R&B's stray post for 15 Dec is still there, unapproved; it reads as "1 more"
+until it scrolls into view. Pressing the button again after the deploy fills
+20 and 27 Oct.
