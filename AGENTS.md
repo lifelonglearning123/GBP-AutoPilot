@@ -2330,3 +2330,50 @@ to send one at all.
   by hand is audited as `checkout.link_made`.
 - No portal counterpart: sending a client their own payment link is the
   agency's work, and the client picks a plan from Billing in the portal.
+
+## Captions write themselves, and say the town and the work shown (2026-10-14)
+
+Chao: uploaded photos and videos sat at "Waiting" and nothing was written
+until somebody pressed "Write captions"; and should captions carry industry
+keywords and the location? The button was a redirecting server action that
+took the whole queue in one request, and nobody found it.
+
+- THE OPEN PAGE DRIVES IT, as it advances a map. `PhotoUpload` reports what
+  it queued (`onQueued`), and `PhotosPanel` then calls
+  `/api/gbp/photos/caption` a dozen photos at a time, `router.refresh()`
+  after each batch so the captions appear, with "Writing captions, N done so
+  far" and "Writing a caption…" on each photo. It stops when nothing is left
+  OR a batch captions nothing (a photo the model can make nothing of stays
+  blank rather than being asked about for ever), five rounds at most. The
+  button runs the same loop for leftovers (pasted addresses, a model that was
+  down). `captionPhotosAction` / `clientCaptionPhotosAction` are gone. Every
+  other button is held while captions are being written, because "Add now"
+  sends the caption with the photo. The route checks `fromThisSite` first
+  and scopes a client to its own business, like the upload route.
+- The caption box is an uncontrolled input, so `PhotoText` is keyed on the
+  caption: without that a caption landing after a refresh did not show.
+  The badge reads "Queued", not "Waiting".
+- THE TOWN COMES FROM `placeFor`, not the address alone. R&B (no street
+  address) was being told "no town is known" by the caption writer while
+  every post and reply knew Trowbridge. The website is read first
+  (`ensureSiteRead`, cached a week).
+- THE WORDS ARE THE TRACKED SEARCHES, offered as vocabulary and used ONLY
+  when the photo plainly shows that work: "resin driveway" for a resin
+  driveway, never for the van, never as a list. `captionWords` in
+  photo-rules.ts (a leaf, pinned) strips the town, drops searches judged
+  "wrong" or switched off, folds duplicates, caps at ten. Said plainly in the
+  code and to Chao: a caption is not a known ranking lever and keyword
+  stuffing is against Google's guidelines; the honest most a caption can
+  carry is the service shown and the town, and that is what it carries.
+- VIDEOS ARE CAPTIONED FROM A FRAME (same day, Chao: "do that"). The vision
+  model is given pictures, so `PhotoUpload` draws a frame about a second in
+  (halfway through a very short clip) to a canvas as a JPEG (`frameOf`, 1280
+  wide, eight seconds at most) and sends it as `poster:<file name>`. The
+  route stores it beside the video in the same folder, ungeotagged, only if
+  it is an image under the photo limit (`storeFrame`); the row keeps it in
+  `gbp_photo_queue.poster_url` (migration 0047). `captionQueued` takes a
+  photo OR a video with a still, shows the model `posterUrl ?? url` and says
+  which pictures are frames. A video whose frame could not be drawn is left
+  as it was: queued, uncaptioned, with a box to type into. Removing a video
+  removes its still. Google takes the caption on a video as `description`
+  with `mediaFormat: VIDEO`, the same field as a photo.
