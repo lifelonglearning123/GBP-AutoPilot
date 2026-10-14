@@ -2272,3 +2272,36 @@ fee is on Payments only; the greeting is "Good morning, <first name>".
   a rise is not a reason), newest leads.
 - `todayFor` never calls out; verify tests its IMPORTS, not its prose (a
   comment saying "never calls Serper" tripped a word match).
+
+## A business lives under its client (2026-10-14)
+
+Chao: "as a user I am still confused with the difference between clients and
+businesses." A client is who pays (billing email, subscription, logins); a
+business is a Google listing looked after for them; one client may have
+several. The database always nested them (`gbp_profiles.client_id`); the nav
+showed two flat lists side by side, and two lists read as two ideas.
+
+- ONE WORKING LIST, Clients (`src/app/agency/clients/page.tsx`): each client
+  as a heading row (subscription badge, archived badge), its businesses
+  beneath with score, waiting and biggest next step. Clients with no business
+  first (nothing can be done until one is added), then by worst score,
+  archived last. The three stats, the "waiting to be added" banner and the
+  "Connect a Google account first" card moved here from the old list.
+- THE CLIENT'S PAGE LEADS WITH ITS BUSINESSES, then `AddBusiness`
+  (`src/components/add-business.tsx`: Maps link inline, by hand folded in a
+  `<details>`, the client id hidden — no "choose a client" box), then the
+  subscription and sign-in cards as before. The starter's "Client data
+  (example — replace with your product)" section is gone from the page; the
+  `records` table and action are untouched.
+- `scoreBusinesses` (`src/lib/data/business-list.ts`) and `BusinessRow`
+  (`src/components/business-rows.tsx`) are the one way a business row is
+  worked out and drawn, so the list and the client's page cannot disagree.
+- `/agency/gbp` REDIRECTS to `/agency/clients` with its query intact, for
+  bookmarks and links in mail already sent. Business pages stay at
+  `/agency/gbp/<id>`; their back link names the client. Every add/sync action
+  answers on the client's page or the Clients list; twelve "not on this
+  workspace" redirects in gbp/actions.ts pointed at the dead list and were
+  only found by the verify walk, not by grep — keep that walk.
+- The Businesses nav item is gone (verify: "Businesses" must NOT be a nav
+  label). Prose that said "the Businesses page" now says "the Clients page".
+- The portal is unchanged: a client only ever saw its own businesses.
