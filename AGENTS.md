@@ -2461,3 +2461,96 @@ Dec, out of sight, and the health line said "by 15 Dec" while the list ended
 R&B's stray post for 15 Dec is still there, unapproved; it reads as "1 more"
 until it scrolls into view. Pressing the button again after the deploy fills
 20 and 27 Oct.
+
+## The queue, read as an owner reads it (2026-10-15)
+
+R&B's second screen, "0 written, then stopped: The next eight weeks are
+already full" over "8 posts" to choose from, was the build BEFORE ba201ee:
+Vercel reports that commit live at 23:14 UTC on 14 Oct, the live stylesheet
+carries df632a8's rules, and HEAD cannot offer "8 posts" beside two empty
+weeks nor say "full" over a row reading empty. A tab loaded before a deploy
+keeps the old page until it is reloaded. Chao then asked for the schedule to
+be thought through as HubSpot would design it, so this is the page rebuilt
+from how a business owner reads it. A workflow read the code, did the
+forensics, listed HubSpot's scheduling patterns and found 47 faults and
+confusions across three lenses; the design below is the smallest that
+removes them.
+
+- THE GAP CARRIES ITS OWN REMEDY. An empty week reads "No post for this
+  week" with "Write one for this week" and "Write it yourself" on the row;
+  the top button is "Write the N missing posts" and never asks how many
+  (`draftNext` takes the week, `opts.at`, and refuses by name a week that
+  filled meanwhile). A week whose post went out early says "Its post went
+  out early, on 14 Oct" (`QueueSlot.early`, from posted rows whose
+  `scheduled_for` sits in a week shown and whose `posted_at` came first).
+- NOTHING VANISHES. Posts dated after the eight weeks are rows under
+  "Later" (`laterOf`); posts still draft or refused whose day has passed
+  are rows under "Missed" (`missedOf`, both pinned) — before this an
+  unapproved post dropped off every page at 09:00 on its day without a
+  word, and a post Google refused on its day was never seen again.
+- THE HEADER IS BUILT FROM THE WEEKS SHOWN, in calendar order
+  (`describeWeeks`, pinned): "Nothing for 20 Oct or 27 Oct. 6 ready through
+  8 Dec. 1 more after that." It used to count every future post and then
+  say "then 2 empty weeks" about the NEXT two. A gap within two weeks is
+  amber and counts as running low for the reminder email (`gapSoon`).
+- EVERY VERB ANSWERS WHERE IT WAS PRESSED (`Verb` in post-queue.tsx, one
+  `useActionState` each): Approve on the row for a post waiting, Approve /
+  Hold back / Move to <free week> / Publish now / Delete in the editor, the
+  hand-written post for a chosen week (`addOwnPost` takes `for`), a drag
+  that SWAPS two weeks (`swapWeeks`; the old reorder re-dated every post
+  onto consecutive weeks and closed every gap, approved dates included).
+  Publish now and Delete ask once, in place. The redirecting twins are gone
+  on both sides, and so is the portal's second writer card ("Write this
+  week's post", which wrote an undated draft the page hid for a minute).
+- Row titles come from `angleLabel`, not the model's brief; a photo in a
+  row is "Queued", the word the grid uses, never "Ready".
+- Certain fixes in the same pass: a refused post can be edited (`editPost`
+  takes `failed` and sets it back to draft); a client's post check queries
+  by id (it sampled the newest forty rows); the CRM "See what's been
+  happening" lands on Settings, where it lives; the agency's photo buttons
+  stay on the Posts tab and the flash is `photosQueuedLine` (the plan's own
+  words; it promised "goes up now, every 14 days"); Delete says "Deleted";
+  the client subtitle no longer says nothing goes out until published; a
+  stale tab is told "This page is out of date. Reload it and try again";
+  the one-a-day rule counts only what the schedule sent (a hand-pressed
+  Publish now held the day's post for twenty hours); and publishing has its
+  own cron, `/api/cron/gbp-due` at two past every hour — it ran LAST in the
+  carry sweep at :37, behind minutes of searches, so a 9am post went at
+  10:37 or later.
+- Previewing a client component without a session: tsconfig `paths` can
+  point `next/navigation` at a stub, `NODE_PATH` lets a script outside the
+  tree find the platform's node_modules, `renderToStaticMarkup` renders
+  `useActionState` at its initial state, and the queue's own `.queue-*`
+  rules are plain CSS that can be cut out of globals.css. At phone width
+  the end column drops under the text and a caption clamps to two lines.
+- THE REBUILD WAS REVIEWED BEFORE IT SHIPPED, and the review changed it.
+  The workflow's later rounds read the rebuilt page and found, among others:
+  Approve and Publish now in the editor dropped unsaved edits (the editor's
+  verbs now send its words, `saveWords` saves them first); an approved post
+  whose hour had passed was labelled "missed, not approved in time" and then
+  went out anyway (`pastSplit`: GOING OUT is approved and under
+  `GOING_OUT_DAYS` 7 late, shown as such; MISSED says why via
+  `missedReason`; `publishDue` no longer sends anything more than a week
+  late); saving a refused post re-armed it (`editPost` clears the approval
+  of a failed post); and the weeks whose posts went out EARLY counted as
+  gaps — amber header, "write the missing posts", a running-low email —
+  which was R&B's own situation (`WeekSummary.early`; an early week offers
+  "Write another for this week" on its row and is never a gap).
+- Older faults it surfaced, fixed in the same pass: a client could rewrite
+  another client's photo captions (both portal caption actions check the
+  photo belongs to the business); weekly reminders were counted as "bad
+  reviews" on the Clients list (`waitingCounts` counts kind 'poor review'
+  only, and approved posts are no longer "waiting"); a hand-written post's
+  Learn more / Book never reached Google (no `ctaUrl`; now the website, or
+  Call when there is none, and `editPost` fills it too); posts written from
+  CRM lines read earlier were not marked `fromCrm`; reminders went to unpaid
+  clients and through the platform's CRM (`paid` gate, `requireAgency` for
+  the client copy); one-a-day is a UK calendar day; a plan change keeps
+  every post's week (`replanDates`) and a cadence-only change moves nothing;
+  nothing on the page can be invisible (`repairDates` snaps off-slot posts
+  onto their row's slot and moves a second post in one week to the next
+  free week).
+- Left open, and said: nothing auto-writes posts when the queue runs low
+  (`draftBatch` has no caller; the reminder email is the mechanism), refused
+  photos do not appear on their week's row, and "gone quiet" knows only the
+  posts this platform sent.
