@@ -2554,3 +2554,76 @@ removes them.
   (`draftBatch` has no caller; the reminder email is the mechanism), refused
   photos do not appear on their week's row, and "gone quiet" knows only the
   posts this platform sent.
+
+## A listing is found by the name over the door (2026-10-16)
+
+Ayur Aesthetics read "not listed" on Facebook while its own website links to
+its page. The listings check searched each directory for the GOOGLE name in
+quotes, `site:facebook.com "Ayur Aesthetics Beauty & Hair Clinic" Wembley`,
+and Google found nothing because the page is called "Ayur Aesthetics". Same
+on Yell, Yelp and Treatwell: 1 of 15 directories found, and 14 of 93 across
+every check on the platform. A Google name is often longer than the name used
+everywhere else, so the search was measuring the name, not the listings. The
+name comparison afterwards was always loose enough; only the search was not.
+
+- `readListing` (citations.ts) is the ONE way a directory is read, for a
+  client's check and a prospect's deep audit alike. In order: the page the
+  business's own home page links to (`ownLinks` -> `siteLinks`, written on the
+  pending row's `url` when the run starts); then the Google name in quotes, as
+  before; then, only when that found nothing carrying the name, `shortName`
+  ("Ayur Aesthetics", "J's Electrical", "Ridgeline Roofing"; R & B and Ryman
+  have none and are not searched twice).
+- The looser search finds strangers too (Yell's category pages, the street on
+  192.com, another salon on the same road), so from it only a result whose
+  title part or web address carries the name is read (`carriesName`,
+  `nameAgrees`: one begins with the other; "Hair" is in the name and is nobody's
+  name). Yelp's title is boilerplate; its address /biz/ayur-aesthetics-wembley
+  is the name.
+- `settle`: a page linked from their own site, or carrying their name on a
+  directory that would not let us read it, is never "not listed" because
+  nothing could be read off it. It is "partly shown", saying why. What a page
+  does show is judged as always; a page plainly about another business stays
+  "a different business".
+- Costs at most one more search per directory, only where the first found
+  nothing. Both listings pages have `maxDuration = 60` (the start reads the
+  home page, up to 12 s); Find leads has 300 for the deep audit.
+- Verify pins it with Ayur's real search results of 2026-10-16. Live: Facebook
+  (through the website's link), Yell, Yelp and Treatwell are found, and the
+  192.com and category pages are not.
+- Serper's `site:` answers vary from call to call (Cylex returned category
+  pages once and nothing the next time). An empty answer is still "not
+  listed"; a retry on every empty answer would double the cost of a check for
+  directories that genuinely have nothing.
+- Deleted the hand-added copy of Ayur on macaws.ai's workspace (client
+  "ayur aesthetics", 3 Oct, never linked), a leftover from testing.
+
+## Help, on both sides; the website links to its Facebook page (2026-10-16)
+
+- `/agency/help` and `/portal/help`, "Help" in both menus, drawn by
+  `HelpCentre` from ONE text, `src/lib/help/help-content.ts` (a leaf). The
+  agency reads exactly what its clients read, in the agency's brand, and can
+  send a link to any answer (`helpHref(base, id)`, e.g. `#facebook-page`).
+  Every answer is open, not folded: a link to one answer should land on it.
+  The portal's is open to a client who has not paid; nothing on it is the work.
+- The text is claims about the app, so it changes in the same commit as the
+  behaviour. Verify holds it: no platform, supplier or cost words (a client
+  reads it); no real client names (the worked example is "Bloom Beauty", and
+  `shortName` really does search it that way); every core and trade directory
+  named is one the check covers; 30 days is `FRESH_DAYS`, a week is
+  `GOING_OUT_DAYS`; the tabs, buttons and group names it quotes exist; the
+  geotag answer is the upload panel's own sentence.
+- The Listings tabs link to "How listings are found" and no longer say "one
+  search each".
+- WEBSITE CHECK: `links:facebook` in "Agrees with your Google profile",
+  weight 2, only once the listings check has FOUND a Facebook page
+  (`listingPages`), never about a page nobody found. OK when any page read
+  links to it or names it in `sameAs`. `readPage` now keeps `outLinks` and
+  `sameAs`. A footer link is how customers find the page, `sameAs` is
+  Google's documented way of saying a social or review page is this
+  business, and either is how the listings check finds it for certain. No
+  ranking claim is made for it.
+- The website plan's LocalBusiness block carries `sameAs`: the business's
+  listings from the latest check that AGREE with Google (a listing showing a
+  wrong number is left out until it is fixed), each reduced to its page
+  (`listingRoot`: a Facebook post becomes the page). All four places that
+  build the plan pass it.
