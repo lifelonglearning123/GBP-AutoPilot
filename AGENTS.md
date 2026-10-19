@@ -2627,3 +2627,54 @@ name comparison afterwards was always loose enough; only the search was not.
   wrong number is left out until it is fixed), each reduced to its page
   (`listingRoot`: a Facebook post becomes the page). All four places that
   build the plan pass it.
+
+## A sign-up reaches the agency, and the contact is on the page (2026-10-19)
+
+Ilana Pine signed Love-Teeth Dental Practice up on Octopusup's page on 16 Oct,
+left at the payment page, and nobody could find who she was: her email was the
+grey subtitle on the CLIENT page (the business page showed nothing), the
+"People with access" list showed her name without her email, the mobile she
+typed was stored in `clients.phone` and shown nowhere, and nothing reached
+Octopusup's GoHighLevel or inbox. `startClientAction` made the login and went
+straight to Stripe.
+
+- `contact-rules.ts` (a leaf, pinned) says who a client is one way for every
+  surface: `splitName`, `phoneForCrm` (+44 form, or GoHighLevel files the same
+  person twice), `phoneShown`, `arrivalLine` ("Signed up on their own on 16 Oct
+  2026 · not paid yet", UK date), the tags and the notes.
+  `clientContact(agencyId, clientId)` (`src/lib/data/client-contact.ts`) reads
+  it: the person is the admin whose address is the billing email, else the
+  first admin; `signedUpAt` is the `client.self_signup` audit row; `paid` is a
+  subscription paid up or in grace.
+- `ClientContactLine` under the title of the client page and of each business
+  page (above the tabs), name, email and phone with Copy, mailto/tel, and how
+  they arrived. People with access show the email beside the name. AGENCY ONLY,
+  decided: it is the agency's record of its customer; the client sees its own
+  details on Team and Billing. Verify fails if a portal page draws it.
+- SIGN-UP: `after(() => announceSignup(...))` in `startClientAction`, so the
+  customer is not kept from the payment page; `after` runs even though the
+  action ends in a redirect. `signupToCrm` puts the PERSON into the agency's OWN
+  GoHighLevel (never the platform's), tagged "google business profile",
+  "signed up" and "not paid", with a note naming the site, the plan and the
+  client page; then the agency's owners and support inbox are emailed. No
+  GoHighLevel connected is said in the job log ("sign-up to CRM").
+- PAID: `upsertClientSubscription` reads the status BEFORE the upsert and, on
+  the turn to paid only, `markPaidInCrm` adds "paid" and removes "not paid"
+  (`removeGhlTags`, DELETE), with a note. Only for clients who signed
+  themselves up: a client the agency added is the agency's to file. Two
+  webhooks racing on the first payment can each add the note; the tags are
+  idempotent.
+- None of the three throws: a sign-up must reach payment and a Stripe webhook
+  must be acknowledged whatever GoHighLevel does.
+- "Send to GoHighLevel" (`pushToGhl`) now names the contact after the person
+  and uses their own number before the listing's, and its tags go through the
+  tags endpoint: tags INSIDE an upsert replace every tag the contact has, which
+  would have wiped "signed up" / "not paid" and the agency's own.
+- `CopyLink` takes `href` for its fallback, so an email that cannot be copied
+  opens mailto:, not a relative link.
+- Ilana was put into Octopusup's GoHighLevel on 2026-10-19 through
+  `signupToCrm` itself (no plan was recorded, so the note names none; no email
+  was sent). Running a script like that locally: `clientAddress` takes its
+  protocol and port from `NEXT_PUBLIC_PLATFORM_URL`, which on this PC is
+  localhost, so set it to `https://gbp.macaws.ai` for the run or the link in
+  the note reads `http://gbp.octopusup.com:3000`.
