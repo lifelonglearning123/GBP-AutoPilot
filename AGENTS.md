@@ -2678,3 +2678,64 @@ straight to Stripe.
   protocol and port from `NEXT_PUBLIC_PLATFORM_URL`, which on this PC is
   localhost, so set it to `https://gbp.macaws.ai` for the run or the link in
   the note reads `http://gbp.octopusup.com:3000`.
+
+## A lead is somebody who meant it; lead searches are of the trade, in the area (2026-10-20)
+
+Chao, on Companions Pet Cremation Services and "Ramona Teagan Conn": leads
+must have intent, not speculation. Reading the code and the data found three
+faults behind them.
+
+- EVERY LEAD SEARCH RAN FROM BIRMINGHAM. `findProspects` passed a fixed
+  `lat: 52.5, lng: -1.9` whatever area was typed (its own comment said "No
+  ll"), so all six searches ever run came back in the wrong place: Swindon
+  electricians from Birmingham and Coventry, Cambridge printers from
+  Leicester, "vets" in Trowbridge as one pet crematorium near Birmingham. The
+  same fault the paid searches had fixed on 2026-09-28. All six searches (62
+  businesses) were deleted on 2026-10-20.
+- `findProspects` now starts from the area (`placeAddress`, the one
+  geocoder), refuses an area it cannot find, and `keepProspects`
+  (`prospect-rules.ts`, pinned) keeps only results within `PROSPECT_MILES`
+  (10) whose Google category or name is the trade: `tradeWords`,
+  `fitsTrade` (a shared four-letter beginning, or a `TRADE_KIN` word as the
+  start of a whole word, so "construct" never finds "consultant"). A decent
+  set mostly in other words (4+, under half matching) is the search's
+  vocabulary and is kept whole; a small set is always held to the trade.
+  Measured: "vets" Trowbridge keeps 13 vets and drops a crematorium, a pet
+  shop, a groomer and three Bristol practices; "builder" keeps the
+  construction companies and general contractors.
+- `mapsAt` now keeps `latitude`, `longitude`, `phoneNumber` and `website`
+  from Serper. They were dropped, so no lead search ever had a number to ring
+  and the deep audit could not compare a phone or read a site's own links.
+  `gbp_prospects` stores `category`, `distance_miles` and the phone and
+  website; the page shows them, and heads the list "Businesses you looked
+  up", said apart from the leads below it.
+- A LEAD (`lead-rules.ts`, pinned): a free check where the visitor PICKED
+  THEIR LISTING or LEFT THEIR DETAILS, not the sales bot, not the agency's own
+  team (`gbp_free_checks.from_team`, set in `check-actions.ts` for anyone
+  signed in to that agency or the platform admin), and not a business already
+  on the workspace (`clientCidsOf`: the profiles' cid or the cid in their
+  Maps link). `leadsFrom` gives one per business, details first then newest,
+  carrying details from an older visit. SUPERSEDES 2026-10-02's "a business
+  Google cannot find is the best lead": those rows were a bot, staff and
+  typos. The row is still written (limits count it); it becomes a lead when
+  the visitor takes the next step. The Find leads list, Today's count and its
+  newest three all use `leadsFrom`: Today counted ROWS, so one bot was "8 new
+  leads". Lists went from 18/10/8/3/1 to 11/3/6/1/1.
+- NOT PAID FOR TWICE: a search that found nothing is answered from the table
+  for `NOT_FOUND_MEMORY` (an hour for a person, a week for the sales bot),
+  after the brake and before any search; a person's repeat is still written
+  at 0 credits so the hourly limit holds. The sales bot had asked after four
+  creators who are not on Google ~80 times a day since 10 October (~1,500
+  credits): `draftPartners` in the Promotor app re-picks a creator whose
+  draft fails, every run, and each attempt asks for a sample. NOT FIXED in
+  that app yet; the platform no longer pays for it.
+- A DEEP AUDIT from the last `AUDIT_FRESH_HOURS` (24) is returned, not run
+  again, before the quota or any search; "Check again" sends `again=1`.
+  Companions was audited six times in five minutes: the button gave no sign of
+  life for a minute and every press queued another run, which Next then ran in
+  series. The button is a `Submit` ("Checking, about a minute…") and the
+  search button too. Who searched (`gbp_prospect_batches.created_by`) and who
+  audited (`gbp_prospects.audited_by`) are stored and shown, and both are in
+  the audit log (`prospects.searched`, `prospect.audited`).
+- Migration 0048 (`from_team`, `created_by`, `category`, `distance_miles`,
+  `audited_by`), additive; `vercel-build` applies it on deploy.
