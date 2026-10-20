@@ -2726,9 +2726,21 @@ faults behind them.
   after the brake and before any search; a person's repeat is still written
   at 0 credits so the hourly limit holds. The sales bot had asked after four
   creators who are not on Google ~80 times a day since 10 October (~1,500
-  credits): `draftPartners` in the Promotor app re-picks a creator whose
-  draft fails, every run, and each attempt asks for a sample. NOT FIXED in
-  that app yet; the platform no longer pays for it.
+  credits): `draftPartners` in the Promotor app re-picked a creator whose
+  draft failed, every run, and each attempt asked for a sample. The real
+  cause, found 2026-10-20: the bot's MOONSHOT account was suspended for
+  insufficient balance from 14:11 on 10 October, so EVERY draft (agencies and
+  creators) failed and nothing was written for ten days; the agency step's
+  failures vanished into `pool`'s catch. Fixed in the Promotor:
+  `failure-rules.ts` sorts a failure into account / temporary / item; an
+  account refusal stops the step, is kept (`controls` "model_refused") and
+  emailed once a day and shown on the dashboard and summary; an item failure
+  sets the agency `draft_failed` (an event keeps why), retried after 7 days.
+  Topping the Moonshot account up is the only cure for the refusal itself.
+- 40 old free checks were marked `from_team` on 2026-10-20 from evidence
+  (the visitor also searched the agency's own name, a client, a test email
+  or the team's bakery typos). Left as leads, with no evidence either way:
+  Klotta, Plumber Dan, BeelineB2B, Chop-Chop London, Your Business Community.
 - A DEEP AUDIT from the last `AUDIT_FRESH_HOURS` (24) is returned, not run
   again, before the quota or any search; "Check again" sends `again=1`.
   Companions was audited six times in five minutes: the button gave no sign of
