@@ -2751,3 +2751,29 @@ faults behind them.
   the audit log (`prospects.searched`, `prospect.audited`).
 - Migration 0048 (`from_team`, `created_by`, `category`, `distance_miles`,
   `audited_by`), additive; `vercel-build` applies it on deploy.
+
+## An invited client can connect Google before paying — and can now see the button (2026-10-27)
+
+Glass Garden Rooms (Octopusup) was added by hand, so posts and review replies
+had nothing to write to. Chao invited their own email to test the way in, accepted
+the invitation, and landed on "Your account is ready — choose a plan" with no
+Connect Google anywhere; they went back to the emailed link and it said "already
+used", because it was. The 2026-10-06 note said a client may connect Google
+before paying: true of `client-start` and the callback, never of the page. The
+portal home returned the payment wall BEFORE building the card, and the
+business overview did the same.
+
+- The portal home builds `googleCard` first and renders it in both branches;
+  the unpaid branch keeps the `Flash` (the OAuth callback lands there with its
+  message) and says "connecting does not wait for the subscription". Scoring
+  moves below the gate: it is the work, which waits for payment. The business
+  overview carries the client card (`beforePaying`) above its wall too.
+- `InviteOwnerForm` prints the link under Copy, and says it works once:
+  whoever opens it and sets a password becomes the login. No "Open it" on an
+  invitation — that is how the test login was made. The agency card says
+  connecting works before payment.
+- Still to decide: the card's manager route names every Google account the
+  agency has connected; Octopusup's only one is R&B's own hotmail address,
+  connected on 2026-10-14 from the agency side. An owner following that route
+  would give R&B manager access to their listing. Connect the agency's own
+  Google account first.
