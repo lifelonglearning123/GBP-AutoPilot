@@ -2273,6 +2273,79 @@ fee is on Payments only; the greeting is "Good morning, <first name>".
 - `todayFor` never calls out; verify tests its IMPORTS, not its prose (a
   comment saying "never calls Serper" tripped a word match).
 
+## GBP Grader for GoHighLevel agencies (2026-10-11)
+
+DECIDED 2026-10-12: option A first. Chao chose a funnel PAGE only, because the
+grader (below) needs a second Supabase project for a safe practice database
+and he did not want a new recurring cost. The page is
+`marketing/ghl-agency-funnel/index.html` (the page, `img/`, `video/tour.mp4` and
+`tour-source/`; no database, no forms, no tracking; README beside it). Its
+angle, set by Chao on 2026-10-12: GHL already has reviews, so the page never
+mentions them and leads with what GHL agencies lack, the map, the ranking and
+the competitor analysis. It shows four live brands (macaws.ai, Leonardo Power,
+Artificial Ignorance, Growtth ai), links out only to /signup, /privacy and
+/terms (never to the platform's own home page, which sold the platform's brand
+rather than the agency's), and says "GHL", never "CRM". The two old promo
+videos in git history are raw screen recordings of the local app (tabs, email
+address, real client names): never publish them. No dev Supabase project has been created, so
+everything below about the grader and `DEV_DATABASE.md` is DEFERRED, not
+current. Two facts learnt doing it: the public sign-up asks for payment up
+front ("No trial, no contract", home page and /for-agencies), so the page
+promises no free audits; the three free audits exist only for sales-bot claim
+links and for an agency that leaves the payment page. Advertising them would
+be the strongest conversion lever, and it is a platform change (B).
+
+Decided: the platform's own way in is a free, instant GBP grade on the
+platform host in HubSpot Website Grader's manner, aimed at agencies that run
+GoHighLevel. Spec: `platform/docs/GRADER_FUNNEL.md`; the build runs from
+`platform/docs/GRADER_PLAYBOOK.md`, one prompt at a time. Read the spec before
+touching a funnel stage; where a task and the spec disagree, say so rather
+than choose.
+
+- It is the sales bot's sample made self-serve: the free check run on the
+  HOUSE agency, the result redrawn in the visitor's own brand (BrandTryout's
+  way: in the browser, nothing uploaded), then the signed claim link into
+  `/signup` and the three-business trial. Reuse `free-check.ts`,
+  `bot/sample.ts`, `signClaim`, `brand-tryout.tsx` and `ghl-push.ts`; do not
+  build a second scorer, claim link or brand preview.
+- PLATFORM HOST ONLY, like `/preview`: the page names the platform and
+  GoHighLevel, so it is a 404 on an agency host and `npm run leak` must still
+  pass. The host chooses the agency; the form never does.
+- A stranger can make it spend. Every brake the free check has applies
+  (`looksAutomated`, the visitor limit, the 7-day cache, `guardSpend`), plus
+  its own daily cap and a RESERVE under the £5 platform ceiling, so a busy
+  grader day can never pause a paying client's round. Refusals use the free
+  check's words: no limits, no credits, no "bot".
+- Nothing invented, as on the shopfront: no testimonials, no percentage
+  without a source; the demand sum is the visitor's own arithmetic. Pure
+  rules in `grader-rules.ts`, pinned in verify; every new table in
+  `0001_rls.sql`.
+- Funnel events go to `funnel_events` through `trackEvent()`, the names
+  listed in the spec, read at `/admin/funnel`. The bot webhook is not the
+  funnel log.
+- How this piece is worked: a task is done when `npm run check` passes (from
+  `platform/`) and the output is shown. It runs `which-db`, then `typecheck`,
+  then verify under `dotenv -e .env.local`, and stops at the first failure, so
+  it cannot pass while `.env.local` is production. Bare `npm run verify` stops
+  with "Invalid environment variables": nothing loads `.env.local` for it.
+  Plan first for anything touching more than one route;
+  review the diff for the spec's edge cases before reporting; no new
+  dependency without asking; one commit per stage, from inside `platform/`.
+- THIS PC'S `platform/.env.local` POINTS AT PRODUCTION (Supabase project ref
+  `fjgrpspnsbbjbzkvksbj`, checked 2026-10-11). Before any script that reads it
+  (`db:migrate`, `admin:create`, `house`, `sample:agency`, `leak`, `guards`,
+  `tenancy:*`, `preflight`), run `npm run which-db` from `platform/` and stop
+  unless it exits 0. It prints the project REF each value names, never a
+  secret, and stops on production, two projects mixed, a ref it cannot read, a
+  live Stripe key or a shell variable beating the file. It looks at the REF
+  because the pooler HOST does not tell projects apart: two projects in one
+  region share it. `npm run *` is on the allow list, so this rule is the only
+  guard until the Phase 0.3 hooks exist. Rules: `src/lib/db-target-rules.ts`,
+  pinned in verify. Details: `platform/docs/DEV_DATABASE.md`.
+- The grader is built against the dev project that document creates. Never run
+  `npm run env:production` while `.env.local` is the dev file: it copies that
+  file into the one you paste into Vercel.
+
 ## A business lives under its client (2026-10-14)
 
 Chao: "as a user I am still confused with the difference between clients and
@@ -2777,3 +2850,58 @@ business overview did the same.
   connected on 2026-10-14 from the agency side. An owner following that route
   would give R&B manager access to their listing. Connect the agency's own
   Google account first.
+
+## A client the agency invoices itself is "billed directly" (2026-10-27)
+
+Chao asked for a way, as platform admin or as the agency, to override the
+payment gate for a corporate client on an invoice or a contract. The only
+switch was agency-wide (`require_client_subscription`, Settings), which opens
+every client at once, and the admin's "comped" only waives what the AGENCY
+pays. Now per client: `clients.billed_directly_at` / `billed_directly_by`
+(migration 0049), set from the Subscription card on the agency's client page
+("Or: this client pays you directly"), audited as `client.billed_directly`.
+
+- `billed-directly-rules.ts` is the pure half, pinned. `maySetBilledDirectly`:
+  the agency sets it on the AGENCY model, because its minimum is the
+  per-business line, counted from every business on the workspace whoever
+  pays for it; on the SHARE model only the platform admin (viewing) may,
+  because the share is taken from the client's Stripe subscription and the £5
+  floor's monthly reckoning is still unbuilt, so a client billed outside Stripe
+  would pay the platform nothing. Nobody is on the share model today (all
+  seven agencies are `agency`); build the floor before opening it up.
+- ONE reader: `clientPaidUp` reads the switch, so the portal gate, the
+  invitation wording, the weekly checks and the reminders honour it together;
+  both portal gates pass it to `clientAccess`. Billing in the portal says
+  "arranged directly with <agency>" instead of plans, and checkout refuses.
+  Switching it on calls `ensureBillingLogin`, as a payment would. The clients
+  list and the contact line read "billed directly".
+- `syncClientQuantity` never reads it: the per-business fee does not change.
+
+Found on the way: the three house agencies (macaws.ai, Leonardo Power,
+Artificial Ignorance) carry a 15–20% share and the PUBLISHED per-business
+rate (`client_fee_minor` null), not "nothing" as the 2026-10-04 note intended.
+Not changed.
+
+## A business that hides its address is searched from where it works (2026-11-10)
+
+Hightop Roofing (Tradeworthy) works across Kent and hides its address on
+Google. Added from its Maps link, the platform took the public listing's
+position as the centre, and for a service-area business that position is the
+HIDDEN address: near Bath. Every "... maidstone" search and the map ran from
+Somerset, failed, and was blamed on Serper (which had 38,204 credits).
+
+- `centre-rules.ts` (leaf, pinned): `listingShowsPlace` — a listing position
+  is the business's place only when the listing shows a street or postcode.
+  `from-link.ts` and `public-listing.ts` keep it as the centre only then;
+  `storedCentre` ignores a stored one on a hidden address, so `ensureCentre`
+  falls to `placeFor`'s town. A town centre now carries `town`.
+- `gbp_profiles.listing_at` (migration 0050, backfilled) keeps the listing
+  point as read. Over `FAR_MILES` (25) from the town the business works in,
+  `AddressFarNotice` says so on both overviews and the report carries it as
+  an "over to you" step: Google ranks a hidden-address business mostly near
+  that address, so it likely costs them, and only the owner can change it
+  (Edit profile → Location → Business address; it goes back through
+  verification).
+- An empty Serper answer for EVERY search is more likely the centre than
+  Serper. The error wording still blames Serper; not changed.
+- Hightop is on Tradeworthy TWICE (two profile rows, same listing).
