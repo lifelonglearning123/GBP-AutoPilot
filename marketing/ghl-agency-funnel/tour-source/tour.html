@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>GBP AutoPilot tour (source for video/tour.mp4)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Sora:wght@600;700&display=swap">
+<style>
+/* This page is the SOURCE of video/tour.mp4. Open it to watch the tour loop live.
+   Record it again with record.js after you change a word, a price or a colour. */
+:root{--ink:#10131C;--paper:#F6F6F9;--pilot:#5646E8;--tint:#EEECFF;--slate:#566074;--line:#E1E3EB;
+  --good:#35D07F;--mid:#FFB02E;--bad:#FF5A4E}
+*{box-sizing:border-box}
+html,body{margin:0;background:#dcdce4}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:var(--paper);color:var(--ink);
+  font:400 22px/1.45 "DM Sans",system-ui,sans-serif}
+h2,h3,b.s{font-family:"Sora","DM Sans",sans-serif}
+.brand{position:absolute;left:72px;top:34px;height:38px;z-index:5;animation:fade-out .4s linear both;animation-delay:35.6s}
+.brand svg{height:38px;width:auto;display:block}
+@keyframes fade-out{to{opacity:0}}
+.progress{position:absolute;left:0;bottom:0;height:6px;width:100%;background:rgba(86,70,232,.14);z-index:5}
+.progress i{display:block;height:100%;background:var(--pilot);transform-origin:left;animation:fill-bar 40s linear both}
+@keyframes fill-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+.scene{position:absolute;inset:0;padding:104px 72px 52px;display:grid;grid-template-columns:430px 1fr;gap:56px;align-items:center;opacity:0}
+.scene .eyebrow{font-weight:700;font-size:18px;color:#4636c8;margin-bottom:14px}
+.scene h2{font-size:54px;line-height:1.05;letter-spacing:-.03em;margin:0}
+.scene .line{color:var(--slate);font-size:24px;margin-top:18px}
+.in{animation:rise .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc((var(--s) + var(--d,0)) * 1s)}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px 28px}
+
+/* scene 1: the map */
+.mapwrap{position:relative;width:496px;height:496px;justify-self:center}
+.mapwrap img{position:absolute;inset:0;width:100%;height:100%;border-radius:22px;border:1px solid var(--line);object-fit:cover;
+  box-shadow:0 30px 70px -34px rgba(16,19,28,.5)}
+.mapwrap .after{animation:wipe 1.3s cubic-bezier(.6,0,.3,1) both;animation-delay:calc((var(--s) + 3.9) * 1s)}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.mcap{position:absolute;left:0;right:0;top:100%;margin-top:16px;font-size:19px;line-height:1.35;color:var(--slate);text-align:center;opacity:0}
+.mcap b{color:var(--ink)}
+.mcap.c1{animation:capshow 3.8s both;animation-delay:calc((var(--s) + .5) * 1s)}
+.mcap.c2{animation:capshow 3.4s both;animation-delay:calc((var(--s) + 5) * 1s)}
+@keyframes capshow{0%{opacity:0}8%,90%{opacity:1}100%{opacity:0}}
+.mcap.c2{animation-name:capshow-hold}
+@keyframes capshow-hold{0%{opacity:0}10%,100%{opacity:1}}
+
+/* scene 2: the ranking */
+.bars{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:11px}
+.bars li{display:grid;grid-template-columns:26px 1fr 78px;align-items:center;gap:14px;font-size:19px}
+.bars .rank{color:var(--slate)}
+.bars .track{background:#ECEDF3;border-radius:9px;height:34px;position:relative;overflow:hidden}
+.bars .fill{position:absolute;inset:0 auto 0 0;background:#C9CCDA;border-radius:9px;transform-origin:left;
+  animation:grow 1.1s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc((var(--s) + .5 + var(--n)*.14) * 1s)}
+.bars .name{position:relative;padding-left:14px;line-height:34px;font-size:17px;white-space:nowrap}
+.bars .pct{text-align:right;font-weight:700}
+.bars li.you .fill{background:var(--pilot)}.bars li.you .name{color:#fff;font-weight:700}
+@keyframes grow{from{transform:scaleX(0)}to{transform:none}}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+.stat{background:var(--tint);border-radius:16px;padding:14px 18px}
+.stat b{display:block;font-size:40px;letter-spacing:-.03em;line-height:1.1}
+.stat span{font-size:17px;color:var(--slate)}
+
+/* scene 3: the competitors */
+.tag{display:inline-block;font-size:15px;font-weight:700;color:#4636c8;background:var(--tint);border-radius:8px;padding:2px 10px;margin-bottom:6px}
+.leaders .it{padding:18px 0;border-top:1px solid var(--line);font-size:21px}
+.leaders .it:first-of-type{border-top:0;padding-top:6px}
+.leaders h3{margin:0 0 6px;font-size:24px}
+
+/* scene 4: the report in four brands */
+.report .head{display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:4px solid #0E7C6B;
+  animation:rulec 7.2s both;animation-delay:calc(var(--s) * 1s)}
+.mark{width:58px;height:58px;border-radius:14px;color:#fff;font-weight:700;font-size:28px;display:grid;place-items:center;
+  background:#0E7C6B;animation:fillc 7.2s both;animation-delay:calc(var(--s) * 1s)}
+.cyc{display:grid}
+.cyc>*{grid-area:1/1;opacity:0;animation:showk 2s both;animation-delay:calc((var(--s) + var(--k)*1.8) * 1s)}
+.mark .cyc>*{display:grid;place-items:center}
+@keyframes showk{0%{opacity:0}10%,90%{opacity:1}100%{opacity:0}}
+.rname{font-family:"Sora",sans-serif;font-weight:700;font-size:28px;line-height:1.1}
+.rsub{font-size:18px;color:var(--slate)}
+@keyframes fillc{0%,25%{background:#0E7C6B}27.8%,50%{background:#F04E3E}52.8%,75%{background:#10131C}77.8%,100%{background:#5646E8}}
+@keyframes rulec{0%,25%{border-color:#0E7C6B}27.8%,50%{border-color:#F04E3E}52.8%,75%{border-color:#10131C}77.8%,100%{border-color:#5646E8}}
+.report .big{font-size:25px;line-height:1.4;margin:24px 0 22px}
+.report .big b{font-family:"Sora",sans-serif}
+.rbars{display:grid;gap:12px}
+.rbars i{display:block;height:16px;border-radius:8px;background:#E3E5EE}
+.rbars i:nth-child(1){width:100%;background:#C9CCDA}.rbars i:nth-child(2){width:57%;background:#0E7C6B;animation:fillc 7.2s both;animation-delay:calc(var(--s) * 1s)}
+.rbars i:nth-child(3){width:38%}.rbars i:nth-child(4){width:24%}.rbars i:nth-child(5){width:18%}
+.chips{display:flex;gap:10px;margin-top:22px}
+.chips span{background:var(--tint);color:#4636c8;font-weight:700;font-size:17px;border-radius:10px;padding:5px 14px}
+
+/* scene 5: the back end */
+.today h3{margin:0 0 6px;font-size:24px}
+.today .row{display:grid;grid-template-columns:1fr auto;gap:2px 16px;padding:18px 0;border-top:1px solid var(--line)}
+.today h3+.row{border-top:0}
+.today .who{font-weight:700;font-size:23px}
+.today .score{font-family:"Sora",sans-serif;font-weight:700;font-size:30px;text-align:right}
+.today .meta{font-size:18px;color:var(--slate)}
+.up{color:#13804A;font-weight:700}.down{color:#C4332B;font-weight:700}
+.todo{font-size:18px;font-weight:700;color:#4636c8;text-align:right}
+
+/* scene 6: the close */
+.scene.end{background:var(--ink);color:#fff;grid-template-columns:1fr;justify-items:start;align-content:center;row-gap:0;padding-left:96px}
+.scene.end h2{font-size:78px;max-width:12em;color:#fff}
+.scene.end .line{color:#C8CBD6;font-size:30px}
+.scene.end .logo svg{height:46px;width:auto;display:block;margin-bottom:34px}
+.scene.end .url{margin-top:34px;display:inline-block;background:#fff;color:var(--ink);font-weight:700;font-size:28px;border-radius:16px;padding:16px 30px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="brand"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 334.43 64" role="img" aria-label="GBP Autopilot"><title>GBP Autopilot</title><g transform="translate(-3 0)"><path d="M30.08 57.44Q32 60 33.92 57.44L48.8 37.6A21 21 0 1 0 15.2 37.6Z" fill="#5646E8"/><circle cx="22" cy="15" r="2.7" fill="#B3AAFF"/><circle cx="32" cy="15" r="2.7" fill="#B3AAFF"/><circle cx="42" cy="15" r="2.7" fill="#B3AAFF"/><circle cx="22" cy="25" r="2.7" fill="#B3AAFF"/><circle cx="42" cy="25" r="2.7" fill="#B3AAFF"/><circle cx="22" cy="35" r="2.7" fill="#B3AAFF"/><circle cx="32" cy="35" r="2.7" fill="#B3AAFF"/><circle cx="42" cy="35" r="2.7" fill="#B3AAFF"/><circle cx="32" cy="25" r="5.4" fill="#35D07F"/></g><path d="M80.42 42.34Q76.87 42.34 74.25 41.16Q71.63 39.98 69.92 38Q68.2 36.03 67.37 33.63Q66.53 31.22 66.53 28.78V27.99Q66.53 25.52 67.37 23.14Q68.21 20.75 69.89 18.82Q71.56 16.89 74.05 15.74Q76.55 14.59 79.84 14.59Q83.39 14.59 86.12 15.9Q88.85 17.21 90.51 19.53Q92.16 21.85 92.44 24.9H86.52Q86.29 23.46 85.38 22.38Q84.46 21.3 83.04 20.7Q81.61 20.09 79.84 20.09Q78.11 20.09 76.75 20.7Q75.39 21.3 74.44 22.41Q73.5 23.52 73 25.05Q72.51 26.58 72.51 28.42Q72.51 30.34 73.04 31.91Q73.58 33.49 74.58 34.62Q75.59 35.75 77.07 36.36Q78.55 36.96 80.42 36.96Q82.86 36.96 84.65 35.95Q86.45 34.94 87.23 33.28L86.53 37.32V31.07H91.95V36.69Q90.26 39.4 87.29 40.87Q84.31 42.34 80.42 42.34ZM79.64 32.23V27.98H94.12V32.23H79.64ZM102.6 41.84V37.23H108.78Q110.42 37.23 111.26 36.36Q112.09 35.49 112.09 33.91Q112.09 32.32 111.26 31.47Q110.43 30.62 108.78 30.62H102.6V27.08H108.5Q111.21 27.08 113.33 27.73Q115.46 28.38 116.68 29.87Q117.9 31.36 117.9 33.86V34.37Q117.9 36.73 116.83 38.4Q115.76 40.06 113.66 40.95Q111.57 41.84 108.5 41.84H102.6ZM97.58 41.84V15.16H103.32V41.84H97.58ZM102.6 29.71V26.16H107.81Q109.48 26.16 110.24 25.31Q111.01 24.45 111.01 22.98Q111.01 21.48 110.24 20.63Q109.48 19.77 107.81 19.77H102.6V15.16H107.44Q111.98 15.16 114.4 17.06Q116.82 18.96 116.82 22.49V23.02Q116.82 25.49 115.59 26.96Q114.36 28.44 112.25 29.07Q110.14 29.71 107.44 29.71H102.6ZM127.32 34.12V29.02H132.02Q133.41 29.02 134.39 28.47Q135.37 27.92 135.91 26.93Q136.44 25.94 136.44 24.64Q136.44 23.3 135.91 22.31Q135.37 21.32 134.39 20.79Q133.41 20.26 132.02 20.26H127.32V15.16H131.73Q135.07 15.16 137.47 16.27Q139.86 17.38 141.14 19.44Q142.42 21.5 142.42 24.35V24.93Q142.42 27.74 141.14 29.81Q139.86 31.88 137.47 33Q135.07 34.12 131.73 34.12H127.32ZM122.13 41.64V15.16H128.04V41.64H122.13Z" fill="#5646E8"/><path d="M153.2 41.64 162.15 15.36H170.5L179.73 41.64H174.46L166.66 18.85L168.48 19.64H163.98L165.87 18.85L158.31 41.64H153.2ZM159.46 34.67 161.07 30.35H171.72L173.32 34.67H159.46ZM189.06 42.25Q185.65 42.25 183.81 40.03Q181.96 37.81 181.96 33.41V22.07H186.97V33.85Q186.97 35.65 187.98 36.7Q188.98 37.75 190.69 37.75Q192.44 37.75 193.54 36.65Q194.64 35.54 194.64 33.63V22.07H199.64V41.64H195.68V33.34H196.08Q196.08 36.29 195.31 38.27Q194.55 40.25 193.04 41.25Q191.54 42.25 189.27 42.25H189.06ZM213.34 41.89Q210.64 41.89 208.89 41.19Q207.15 40.49 206.29 38.82Q205.44 37.16 205.44 34.31L205.45 16.58H210.13L210.12 34.62Q210.12 36.06 210.89 36.83Q211.66 37.61 213.1 37.61H216.16V41.89H213.34ZM202.34 25.76V22.09H216.16V25.76H202.34ZM229.11 42.32Q226.53 42.32 224.55 41.5Q222.57 40.67 221.2 39.26Q219.84 37.84 219.13 36.04Q218.43 34.24 218.43 32.28V31.52Q218.43 29.53 219.16 27.7Q219.89 25.87 221.28 24.46Q222.66 23.05 224.64 22.23Q226.62 21.41 229.11 21.41Q231.61 21.41 233.58 22.23Q235.55 23.05 236.94 24.46Q238.32 25.87 239.05 27.7Q239.78 29.53 239.78 31.52V32.28Q239.78 34.24 239.08 36.04Q238.38 37.84 237.01 39.26Q235.64 40.67 233.66 41.5Q231.68 42.32 229.11 42.32ZM229.11 38.04Q230.94 38.04 232.2 37.24Q233.46 36.44 234.12 35.04Q234.78 33.65 234.78 31.9Q234.78 30.1 234.1 28.71Q233.43 27.31 232.16 26.5Q230.89 25.69 229.11 25.69Q227.34 25.69 226.06 26.5Q224.79 27.31 224.11 28.71Q223.44 30.1 223.44 31.9Q223.44 33.65 224.09 35.04Q224.75 36.44 226.02 37.24Q227.29 38.04 229.11 38.04ZM243.63 48.84V22.09H247.59V30.53L246.98 30.5Q247.12 27.49 248.22 25.49Q249.32 23.48 251.16 22.48Q252.99 21.48 255.26 21.48Q257.33 21.48 259.01 22.25Q260.7 23.01 261.9 24.37Q263.11 25.73 263.75 27.55Q264.39 29.36 264.39 31.47V32.23Q264.39 34.33 263.76 36.16Q263.13 37.99 261.93 39.36Q260.73 40.74 259.04 41.51Q257.35 42.29 255.24 42.29Q253.06 42.29 251.25 41.38Q249.43 40.47 248.3 38.54Q247.18 36.6 247.05 33.56L248.64 35.97V48.84H243.63ZM253.98 38.08Q255.6 38.08 256.82 37.28Q258.03 36.49 258.71 35.08Q259.38 33.67 259.38 31.85Q259.38 29.99 258.71 28.62Q258.03 27.24 256.83 26.47Q255.62 25.69 253.98 25.69Q252.52 25.69 251.27 26.35Q250.02 27.01 249.26 28.26Q248.49 29.51 248.49 31.27V32.71Q248.49 34.4 249.28 35.6Q250.08 36.8 251.34 37.44Q252.6 38.08 253.98 38.08ZM269.19 41.64V22.09H274.2V41.64H269.19ZM266.46 25.84V22.09H274.2V25.84H266.46ZM271.02 19.75Q269.55 19.75 268.85 18.99Q268.15 18.22 268.15 17.03Q268.15 15.85 268.85 15.08Q269.56 14.32 271.01 14.32Q272.49 14.32 273.18 15.08Q273.87 15.85 273.87 17.03Q273.87 18.22 273.18 18.99Q272.49 19.75 271.02 19.75ZM279.67 41.64V15.36H284.67V41.64H279.67ZM277.22 19.1V15.36H284.67V19.1H277.22ZM299.23 42.32Q296.66 42.32 294.68 41.5Q292.7 40.67 291.33 39.26Q289.96 37.84 289.26 36.04Q288.56 34.24 288.56 32.28V31.52Q288.56 29.53 289.29 27.7Q290.02 25.87 291.4 24.46Q292.79 23.05 294.77 22.23Q296.75 21.41 299.23 21.41Q301.74 21.41 303.71 22.23Q305.68 23.05 307.06 24.46Q308.45 25.87 309.18 27.7Q309.91 29.53 309.91 31.52V32.28Q309.91 34.24 309.21 36.04Q308.5 37.84 307.14 39.26Q305.77 40.67 303.79 41.5Q301.81 42.32 299.23 42.32ZM299.23 38.04Q301.07 38.04 302.33 37.24Q303.59 36.44 304.25 35.04Q304.9 33.65 304.9 31.9Q304.9 30.1 304.23 28.71Q303.55 27.31 302.29 26.5Q301.02 25.69 299.23 25.69Q297.47 25.69 296.19 26.5Q294.91 27.31 294.24 28.71Q293.56 30.1 293.56 31.9Q293.56 33.65 294.22 35.04Q294.88 36.44 296.15 37.24Q297.42 38.04 299.23 38.04ZM322.24 41.89Q319.54 41.89 317.79 41.19Q316.05 40.49 315.19 38.82Q314.34 37.16 314.34 34.31L314.35 16.58H319.03L319.02 34.62Q319.02 36.06 319.79 36.83Q320.56 37.61 322 37.61H325.06V41.89H322.24ZM311.24 25.76V22.09H325.06V25.76H311.24Z" fill="#10131C"/></svg></div>
+  <div class="progress"><i></i></div>
+
+  <!-- 1. the map -->
+  <section class="scene" data-s="0" data-e="8.5">
+    <div>
+      <p class="eyebrow in" style="--d:.1">The map</p>
+      <h2 class="in" style="--d:.2">Street by street. Not one number.</h2>
+      <p class="line in" style="--d:.5">The same business, before and after.</p>
+    </div>
+    <div class="mapwrap in" style="--d:.2">
+      <img src="../img/map-before.webp" alt="">
+      <img class="after" src="../img/map-after.webp" alt="">
+      <p class="mcap c1"><b>Before</b> Fifth to seventh near the door, off the first page at the edges.</p>
+      <p class="mcap c2"><b>After</b> First at every one of the twenty-five points.</p>
+    </div>
+  </section>
+
+  <!-- 2. the ranking -->
+  <section class="scene" data-s="8.5" data-e="16">
+    <div>
+      <p class="eyebrow in" style="--d:.1">The ranking</p>
+      <h2 class="in" style="--d:.2">Who shows up most.</h2>
+      <p class="line in" style="--d:.5">Share of local search. Every week.</p>
+    </div>
+    <div>
+      <div class="card in" style="--d:.2">
+        <h3 style="margin:0;font-size:24px">Who shows up most</h3>
+        <ol class="bars">
+          <li><span class="rank">1</span><span class="track"><span class="fill" style="width:100%;--n:0"></span><span class="name">A rival electrician</span></span><span class="pct">67.1%</span></li>
+          <li class="you"><span class="rank">2</span><span class="track"><span class="fill" style="width:57.5%;--n:1"></span><span class="name">Your client</span></span><span class="pct">38.6%</span></li>
+          <li><span class="rank">3</span><span class="track"><span class="fill" style="width:53.8%;--n:2"></span><span class="name">A rival electrician</span></span><span class="pct">36.1%</span></li>
+          <li><span class="rank">4</span><span class="track"><span class="fill" style="width:31.9%;--n:3"></span><span class="name">A rival electrician</span></span><span class="pct">21.4%</span></li>
+          <li><span class="rank">5</span><span class="track"><span class="fill" style="width:31.9%;--n:4"></span><span class="name">A rival electrician</span></span><span class="pct">21.4%</span></li>
+          <li><span class="rank">6</span><span class="track"><span class="fill" style="width:30.3%;--n:5"></span><span class="name">A rival electrician</span></span><span class="pct">20.3%</span></li>
+          <li><span class="rank">7</span><span class="track"><span class="fill" style="width:24.7%;--n:6"></span><span class="name">A rival electrician</span></span><span class="pct">16.6%</span></li>
+        </ol>
+      </div>
+      <div class="stats">
+        <div class="stat in" style="--d:1.6"><b>2nd</b><span>of 49</span></div>
+        <div class="stat in" style="--d:1.8"><b data-count="970" data-at="1.9">0</b><span>searches a month</span></div>
+        <div class="stat in" style="--d:2"><b data-count="370" data-at="2.1">0</b><span>showed you</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. the competitors -->
+  <section class="scene" data-s="16" data-e="23.5">
+    <div>
+      <p class="eyebrow in" style="--d:.1">The competitors</p>
+      <h2 class="in" style="--d:.2">Who's ahead. And why.</h2>
+      <p class="line in" style="--d:.5">The gaps, named. With the fix.</p>
+    </div>
+    <div class="card leaders in" style="--d:.2">
+      <h3>Why the leaders are ahead</h3>
+      <div class="it in" style="--d:1.0"><span class="tag">Category</span><br>3 of the 5 most visible competitors list “Solar panel installer” as a Google category; this business does not.</div>
+      <div class="it in" style="--d:2.6"><span class="tag">Not ranking</span><br>Not in the top 20 for “ev charger installer”.</div>
+      <div class="it in" style="--d:4.0"><span class="tag">Head to head</span><br>All 3 are 0.4 to 1.3 mi away, yet they still come above you.</div>
+    </div>
+  </section>
+
+  <!-- 4. the report -->
+  <section class="scene" data-s="23.5" data-e="31">
+    <div>
+      <p class="eyebrow in" style="--d:.1">The report</p>
+      <h2 class="in" style="--d:.2">Your name on all of it.</h2>
+      <p class="line in" style="--d:.5">Your logo. Your colour. Your domain.</p>
+    </div>
+    <div class="card report in" style="--d:.2">
+      <div class="head">
+        <span class="mark"><span class="cyc"><span style="--k:0">N</span><span style="--k:1">m</span><span style="--k:2">L</span><span style="--k:3">Y</span></span></span>
+        <div>
+          <span class="rname cyc"><span style="--k:0">Northgate Digital</span><span style="--k:1">macaws.ai</span><span style="--k:2">Leonardo Power</span><span style="--k:3">Your agency</span></span>
+          <span class="rsub">Example Electrical · October 2026</span>
+        </div>
+      </div>
+      <p class="big">About <b>970</b> people a month search for an electrician near you. <b>370</b> of those searches showed you, and you are <b>2nd of 49</b>.</p>
+      <div class="rbars"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="chips"><span>A page</span><span>A PDF</span><span>A link</span></div>
+    </div>
+  </section>
+
+  <!-- 5. the back end -->
+  <section class="scene" data-s="31" data-e="36">
+    <div>
+      <p class="eyebrow in" style="--d:.1">The back end</p>
+      <h2 class="in" style="--d:.2">One list. Worst first.</h2>
+      <p class="line in" style="--d:.5">Open it Monday. Know who needs you.</p>
+    </div>
+    <div class="card today in" style="--d:.2">
+      <h3>Businesses to look at</h3>
+      <div class="row in" style="--d:.8"><span class="who">Example Plumbing</span><span class="score">58</span><span class="meta">Share of search 12.4% <span class="down">▼ 5.1</span></span><span class="todo">Add a category · +12</span></div>
+      <div class="row in" style="--d:1.4"><span class="who">Example Electrical</span><span class="score">72</span><span class="meta">Share of search 38.6% <span class="up">▲ 2.1</span></span><span class="todo">Fill in opening hours · +4</span></div>
+      <div class="row in" style="--d:2.0"><span class="who">Example Roofing</span><span class="score">81</span><span class="meta">Share of search 51.0% <span class="up">▲ 0.8</span></span><span class="todo">Add 6 photos · +4</span></div>
+    </div>
+  </section>
+
+  <!-- 6. the close -->
+  <section class="scene end" data-s="36" data-e="40">
+    <div class="logo in" style="--d:.1"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 334.43 64" role="img" aria-label="GBP Autopilot"><title>GBP Autopilot</title><g transform="translate(-3 0)"><path d="M30.08 57.44Q32 60 33.92 57.44L48.8 37.6A21 21 0 1 0 15.2 37.6Z" fill="#5646E8"/><circle cx="22" cy="15" r="2.7" fill="#B3AAFF"/><circle cx="32" cy="15" r="2.7" fill="#B3AAFF"/><circle cx="42" cy="15" r="2.7" fill="#B3AAFF"/><circle cx="22" cy="25" r="2.7" fill="#B3AAFF"/><circle cx="42" cy="25" r="2.7" fill="#B3AAFF"/><circle cx="22" cy="35" r="2.7" fill="#B3AAFF"/><circle cx="32" cy="35" r="2.7" fill="#B3AAFF"/><circle cx="42" cy="35" r="2.7" fill="#B3AAFF"/><circle cx="32" cy="25" r="5.4" fill="#35D07F"/></g><path d="M80.42 42.34Q76.87 42.34 74.25 41.16Q71.63 39.98 69.92 38Q68.2 36.03 67.37 33.63Q66.53 31.22 66.53 28.78V27.99Q66.53 25.52 67.37 23.14Q68.21 20.75 69.89 18.82Q71.56 16.89 74.05 15.74Q76.55 14.59 79.84 14.59Q83.39 14.59 86.12 15.9Q88.85 17.21 90.51 19.53Q92.16 21.85 92.44 24.9H86.52Q86.29 23.46 85.38 22.38Q84.46 21.3 83.04 20.7Q81.61 20.09 79.84 20.09Q78.11 20.09 76.75 20.7Q75.39 21.3 74.44 22.41Q73.5 23.52 73 25.05Q72.51 26.58 72.51 28.42Q72.51 30.34 73.04 31.91Q73.58 33.49 74.58 34.62Q75.59 35.75 77.07 36.36Q78.55 36.96 80.42 36.96Q82.86 36.96 84.65 35.95Q86.45 34.94 87.23 33.28L86.53 37.32V31.07H91.95V36.69Q90.26 39.4 87.29 40.87Q84.31 42.34 80.42 42.34ZM79.64 32.23V27.98H94.12V32.23H79.64ZM102.6 41.84V37.23H108.78Q110.42 37.23 111.26 36.36Q112.09 35.49 112.09 33.91Q112.09 32.32 111.26 31.47Q110.43 30.62 108.78 30.62H102.6V27.08H108.5Q111.21 27.08 113.33 27.73Q115.46 28.38 116.68 29.87Q117.9 31.36 117.9 33.86V34.37Q117.9 36.73 116.83 38.4Q115.76 40.06 113.66 40.95Q111.57 41.84 108.5 41.84H102.6ZM97.58 41.84V15.16H103.32V41.84H97.58ZM102.6 29.71V26.16H107.81Q109.48 26.16 110.24 25.31Q111.01 24.45 111.01 22.98Q111.01 21.48 110.24 20.63Q109.48 19.77 107.81 19.77H102.6V15.16H107.44Q111.98 15.16 114.4 17.06Q116.82 18.96 116.82 22.49V23.02Q116.82 25.49 115.59 26.96Q114.36 28.44 112.25 29.07Q110.14 29.71 107.44 29.71H102.6ZM127.32 34.12V29.02H132.02Q133.41 29.02 134.39 28.47Q135.37 27.92 135.91 26.93Q136.44 25.94 136.44 24.64Q136.44 23.3 135.91 22.31Q135.37 21.32 134.39 20.79Q133.41 20.26 132.02 20.26H127.32V15.16H131.73Q135.07 15.16 137.47 16.27Q139.86 17.38 141.14 19.44Q142.42 21.5 142.42 24.35V24.93Q142.42 27.74 141.14 29.81Q139.86 31.88 137.47 33Q135.07 34.12 131.73 34.12H127.32ZM122.13 41.64V15.16H128.04V41.64H122.13Z" fill="#9A90FF"/><path d="M153.2 41.64 162.15 15.36H170.5L179.73 41.64H174.46L166.66 18.85L168.48 19.64H163.98L165.87 18.85L158.31 41.64H153.2ZM159.46 34.67 161.07 30.35H171.72L173.32 34.67H159.46ZM189.06 42.25Q185.65 42.25 183.81 40.03Q181.96 37.81 181.96 33.41V22.07H186.97V33.85Q186.97 35.65 187.98 36.7Q188.98 37.75 190.69 37.75Q192.44 37.75 193.54 36.65Q194.64 35.54 194.64 33.63V22.07H199.64V41.64H195.68V33.34H196.08Q196.08 36.29 195.31 38.27Q194.55 40.25 193.04 41.25Q191.54 42.25 189.27 42.25H189.06ZM213.34 41.89Q210.64 41.89 208.89 41.19Q207.15 40.49 206.29 38.82Q205.44 37.16 205.44 34.31L205.45 16.58H210.13L210.12 34.62Q210.12 36.06 210.89 36.83Q211.66 37.61 213.1 37.61H216.16V41.89H213.34ZM202.34 25.76V22.09H216.16V25.76H202.34ZM229.11 42.32Q226.53 42.32 224.55 41.5Q222.57 40.67 221.2 39.26Q219.84 37.84 219.13 36.04Q218.43 34.24 218.43 32.28V31.52Q218.43 29.53 219.16 27.7Q219.89 25.87 221.28 24.46Q222.66 23.05 224.64 22.23Q226.62 21.41 229.11 21.41Q231.61 21.41 233.58 22.23Q235.55 23.05 236.94 24.46Q238.32 25.87 239.05 27.7Q239.78 29.53 239.78 31.52V32.28Q239.78 34.24 239.08 36.04Q238.38 37.84 237.01 39.26Q235.64 40.67 233.66 41.5Q231.68 42.32 229.11 42.32ZM229.11 38.04Q230.94 38.04 232.2 37.24Q233.46 36.44 234.12 35.04Q234.78 33.65 234.78 31.9Q234.78 30.1 234.1 28.71Q233.43 27.31 232.16 26.5Q230.89 25.69 229.11 25.69Q227.34 25.69 226.06 26.5Q224.79 27.31 224.11 28.71Q223.44 30.1 223.44 31.9Q223.44 33.65 224.09 35.04Q224.75 36.44 226.02 37.24Q227.29 38.04 229.11 38.04ZM243.63 48.84V22.09H247.59V30.53L246.98 30.5Q247.12 27.49 248.22 25.49Q249.32 23.48 251.16 22.48Q252.99 21.48 255.26 21.48Q257.33 21.48 259.01 22.25Q260.7 23.01 261.9 24.37Q263.11 25.73 263.75 27.55Q264.39 29.36 264.39 31.47V32.23Q264.39 34.33 263.76 36.16Q263.13 37.99 261.93 39.36Q260.73 40.74 259.04 41.51Q257.35 42.29 255.24 42.29Q253.06 42.29 251.25 41.38Q249.43 40.47 248.3 38.54Q247.18 36.6 247.05 33.56L248.64 35.97V48.84H243.63ZM253.98 38.08Q255.6 38.08 256.82 37.28Q258.03 36.49 258.71 35.08Q259.38 33.67 259.38 31.85Q259.38 29.99 258.71 28.62Q258.03 27.24 256.83 26.47Q255.62 25.69 253.98 25.69Q252.52 25.69 251.27 26.35Q250.02 27.01 249.26 28.26Q248.49 29.51 248.49 31.27V32.71Q248.49 34.4 249.28 35.6Q250.08 36.8 251.34 37.44Q252.6 38.08 253.98 38.08ZM269.19 41.64V22.09H274.2V41.64H269.19ZM266.46 25.84V22.09H274.2V25.84H266.46ZM271.02 19.75Q269.55 19.75 268.85 18.99Q268.15 18.22 268.15 17.03Q268.15 15.85 268.85 15.08Q269.56 14.32 271.01 14.32Q272.49 14.32 273.18 15.08Q273.87 15.85 273.87 17.03Q273.87 18.22 273.18 18.99Q272.49 19.75 271.02 19.75ZM279.67 41.64V15.36H284.67V41.64H279.67ZM277.22 19.1V15.36H284.67V19.1H277.22ZM299.23 42.32Q296.66 42.32 294.68 41.5Q292.7 40.67 291.33 39.26Q289.96 37.84 289.26 36.04Q288.56 34.24 288.56 32.28V31.52Q288.56 29.53 289.29 27.7Q290.02 25.87 291.4 24.46Q292.79 23.05 294.77 22.23Q296.75 21.41 299.23 21.41Q301.74 21.41 303.71 22.23Q305.68 23.05 307.06 24.46Q308.45 25.87 309.18 27.7Q309.91 29.53 309.91 31.52V32.28Q309.91 34.24 309.21 36.04Q308.5 37.84 307.14 39.26Q305.77 40.67 303.79 41.5Q301.81 42.32 299.23 42.32ZM299.23 38.04Q301.07 38.04 302.33 37.24Q303.59 36.44 304.25 35.04Q304.9 33.65 304.9 31.9Q304.9 30.1 304.23 28.71Q303.55 27.31 302.29 26.5Q301.02 25.69 299.23 25.69Q297.47 25.69 296.19 26.5Q294.91 27.31 294.24 28.71Q293.56 30.1 293.56 31.9Q293.56 33.65 294.22 35.04Q294.88 36.44 296.15 37.24Q297.42 38.04 299.23 38.04ZM322.24 41.89Q319.54 41.89 317.79 41.19Q316.05 40.49 315.19 38.82Q314.34 37.16 314.34 34.31L314.35 16.58H319.03L319.02 34.62Q319.02 36.06 319.79 36.83Q320.56 37.61 322 37.61H325.06V41.89H322.24ZM311.24 25.76V22.09H325.06V25.76H311.24Z" fill="#FFFFFF"/></svg></div>
+    <h2 class="in" style="--d:.25">Put your name on it.</h2>
+    <p class="line in" style="--d:.6">£149 a month + £5 per client. No trial. No contract.</p>
+    <span class="url in" style="--d:1">gbp.macaws.ai</span>
+  </section>
+</div>
+
+<script>
+const TOTAL = 40;
+const scenes = [...document.querySelectorAll(".scene")];
+let css = "";
+scenes.forEach((el, i) => {
+  const s = +el.dataset.s, e = +el.dataset.e, last = i === scenes.length - 1, f = 0.35;
+  const p = (t) => ((t / TOTAL) * 100).toFixed(3) + "%";
+  css += `@keyframes vis${i}{` +
+    (s === 0 ? `0%,${p(e - f)}{opacity:1}` : `0%,${p(s)}{opacity:0}${p(s + f)},${p(e - f)}{opacity:1}`) +
+    (last ? `100%{opacity:1}` : `${p(e)},100%{opacity:0}`) + `}`;
+  el.style.setProperty("--s", s);
+  el.style.animation = `vis${i} ${TOTAL}s linear both`;
+});
+document.head.appendChild(Object.assign(document.createElement("style"), { textContent: css }));
+
+function counters(t) {
+  document.querySelectorAll("[data-count]").forEach((el) => {
+    const start = +el.closest(".scene").dataset.s + (+el.dataset.at || 0.8);
+    const k = Math.min(1, Math.max(0, (t - start) / 1.4));
+    el.textContent = Math.round(+el.dataset.count * (1 - Math.pow(1 - k, 3))).toLocaleString("en-GB");
+  });
+}
+// The recorder calls __seek(t) for every frame, so the video is exact and never drops a frame.
+window.__seek = (t) => {
+  document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t * 1000; });
+  counters(t);
+};
+if (!location.hash.includes("record")) {
+  const t0 = performance.now();
+  (function tick() { window.__seek(((performance.now() - t0) / 1000) % TOTAL); requestAnimationFrame(tick); })();
+}
+</script>
+</body>
+</html>
