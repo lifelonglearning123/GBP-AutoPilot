@@ -2905,3 +2905,81 @@ Somerset, failed, and was blamed on Serper (which had 38,204 credits).
 - An empty Serper answer for EVERY search is more likely the centre than
   Serper. The error wording still blames Serper; not changed.
 - Hightop is on Tradeworthy TWICE (two profile rows, same listing).
+
+## Event mode, and no silent free check (2026-11-10)
+
+Leonardo Power took a stand at an exhibition and asked for £50 a day of
+searches. Money was never the limit (a free check costs under 1p); the brakes
+were: everyone on a venue's Wi-Fi, or one tablet passed round, is ONE visitor,
+so the ninth check in an hour was refused; 200 a day is a hard stop; and the
+£5 platform ceiling is shared with every paying client's work.
+
+- `event-rules.ts` (leaf, pinned): `agencies.event_until` / `event_day_minor`
+  (migration 0051). While live, the agency's free check runs on its own daily
+  budget, measured from its own `free check%` usage since midnight UK; the
+  200-a-day stop is lifted; a connection may run `EVENT_PER_VISITOR_HOUR` (60);
+  `guardSpend(..., { event: true })` skips only the monthly allowance; and
+  `spentToday` leaves that spend out of the platform total (`notEventSpend`),
+  so a busy stand never pauses anybody else's maps. Ends itself at midnight
+  after the last day. Capped at £100 a day and 14 days. Set and ended by the
+  platform admin on `/admin/agencies/[id]` ("Event mode"), audited.
+- `profile-check.tsx`: every server call goes through `reach()`. A server
+  action that THROWS (a tab open across a deploy, a dropped connection)
+  vanished inside the transition, so "Send me the guide" did nothing on
+  gbp.leonardopower.com. It now says "This page is out of date or lost its
+  connection. Reload it and try again."
+
+## Removing a business; one listing, one row (2026-11-20)
+
+Hightop Roofing was on Tradeworthy THREE times under two clients: one Google
+listing, three rows, three scores, each from a different day's read and a
+different set of checks. Nothing stopped a listing being added twice, nothing
+said two rows were the same listing, and nothing could take one off.
+
+- REMOVE: a grey "Remove" link on each business row opens the Settings tab at
+  a folded "Remove this business"; the button is dead until the business name
+  is typed, and `removeBusinessStateAction` checks the name again on the
+  server. `removeBusiness` (remove.ts) deletes the profile scoped by agency
+  (every table hangs off it and cascades), then the stored photos
+  best-effort, only from that profile's own folder (`storedPathOf`), then
+  `chargeForConnected`. Nothing on Google is touched. Agency only; audited
+  `gbp.profile.removed`.
+- `remove-rules.ts` (leaf, pinned): `listingKey` is the place id, else the
+  Maps cid as TEXT (cids pass 2^53). Rows sharing one get "Same Google listing
+  as N other rows" on the Clients list and the client's page, counted across
+  the whole workspace. `profileFromLink` refuses a listing already held,
+  naming the row and its client.
+
+## An owner connects Google with one link (2026-11-20)
+
+Tradeworthy had twelve clients and not one business connected. Connecting
+took an invitation, a password, a portal and a button the owner had to find;
+connecting the agency's own account did nothing until somebody pressed "Read
+profiles"; and every row said "Added by hand", which names how a row arrived,
+not what to do about it.
+
+- CONNECT LINKS (`connect-link.ts`, rules in `connect-link-rules.ts`, table
+  `gbp_connect_links`, migration 0052, in the RLS backstop). The agency gets a
+  link per business on its OWN address (`clientAddress`); the owner opens
+  `/connect/<token>` (public), sees the agency's name and one button, signs in
+  with Google, and lands on `/connected`. No account, no password. Only the
+  token's sha256 is stored; a new link withdraws the last; 14 days; spent
+  (`used_at`) only when a listing actually links, so a wrong Google account
+  first is not the end of it. Emailed only through the agency's own
+  GoHighLevel (`requireAgency`), else copied by hand.
+- THE CALLBACK'S LINK PATH needs no session, because the link is the only
+  thing vouching for the person: the signed state carries `linkId`, and the
+  callback re-reads the link (still good, same agency AND client) before
+  storing the account against that client only. Which listing links is still
+  decided by `linkClientProfile`'s matching. Every other path keeps its
+  user / role / membership checks; the verify check on the client-admin guard
+  now slices from its own start (it had sliced at the first `try {` in the
+  file, which the new block precedes).
+- Connecting the AGENCY's own Google account now runs `syncProfilesFor` at
+  once and says how many linked and how many are listed.
+- Rows say `connectLine`: "Not connected to Google · Get a connect link",
+  "Not connected yet · link sent 18 Nov, opened · Send again", or "Connected
+  to Google". The agency card leads with the link; the portal login is folded
+  under it. Words: "Find my listings", "Listings found on your Google
+  account", "Add to client".
+- Google's consent screen still names "GBP AutoPilot"; tell owners.
