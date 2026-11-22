@@ -3044,3 +3044,45 @@ anybody, and its pencil would set a new one, which is re-verification.
   the jobs in the owner's words, shown on the profile, much weaker, each
   sits under a category, so set the primary first. Same words both sides;
   verify pins that it appears twice.
+
+## Every design gets a design check before it is done (2026-11-22)
+
+Chao's standing rule: every page or component built or changed on the
+platform is checked with the `design-taste-frontend` and `ui-ux-pro-max`
+skills before it is reported finished. The bar is clean and modern,
+human-centred, easy to use "like HubSpot", and consistent with the rest of
+the app (globals.css tokens, `--brand`, Sora/DM Sans, the existing `part`,
+card, save-bar and `HelpNote` patterns, plain English with no jargon).
+
+- LOOK AT IT RENDERED, not just the code. The Playwright tools in
+  `C:\Python\tools\playwright` hold a browser profile signed in to
+  gbp.macaws.ai (`login.mjs` to sign in again; the window must be CLOSED
+  before a headless run can use the profile). `gp-review.mjs <url>
+  [agencyId]` screenshots a page as loaded, with every `part` opened, and at
+  390px; with an agency id it first presses "View their workspace" on the
+  admin page, because a business in another agency is a 404 otherwise.
+- Check at least: one clear job per section and an obvious next action;
+  labels a business owner understands; grouping and order by what the owner
+  is trying to do; 24px+ targets and 8px+ gaps; contrast; no emoji or glyphs
+  standing in for icons; no horizontal scroll at phone width; the same
+  pattern as the neighbouring tabs for the same kind of control.
+- Say in the report that the check was done and what it changed.
+- PREVIEWING UNPUSHED WORK: `next dev` does not run the platform on this PC
+  (Turbopack: "module factory is not available"; `--webpack`: "Jest worker
+  encountered 2 child process exceptions"). A production build does. Copy the
+  changed files into the build-check worktree, `next build` there with
+  `ROOT_DOMAIN`, `PLATFORM_HOSTS` and `NEXT_PUBLIC_PLATFORM_URL` set to
+  `localhost:<port>`, then `next start -p <port>`. `local-review.mjs <url>`
+  and `local-interact.mjs <url>` (same folder as gp-review) copy the
+  gbp.macaws.ai session cookies into a throwaway localhost browser; nothing is
+  written back to the profile and nothing presses Save. Stop the server
+  afterwards: a stopped background shell can leave node holding the port.
+- First run of the rule (the Google profile tab, 2026-11-22): sections grouped
+  as How customers find you / reach you / When you're open / Name and address;
+  a status mark and a reason on each scored part; one way to save (the shared
+  `SaveBar` in save-part.tsx); hours a row a day with a switch, "24 hours" and
+  "Copy Monday to every day" (it was three full-width rows a day, and Hightop's
+  24-hour week read "00:00 to 00:00" seven times); chips with a drawn ×;
+  attributes in our words with links added from a chooser; the "↗" that
+  rendered as an emoji tile drawn instead. On a phone a part's summary moves
+  under its title. Pinned in verify.
