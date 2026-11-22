@@ -2983,3 +2983,49 @@ not what to do about it.
   under it. Words: "Find my listings", "Listings found on your Google
   account", "Add to client".
 - Google's consent screen still names "GBP AutoPilot"; tell owners.
+
+## The details form caught up with GoHighLevel's editor (2026-11-22)
+
+GHL's "GBP Optimization" page (read with Playwright from Tradeworthy's
+account, Hightop Roofing) edits service area, services, attributes, chat and
+social links, opening date and holiday hours. Ours edited phone, website,
+hours and categories. Chao chose: service area, services, holiday hours and
+attributes; the ADDRESS STAYS A LINK to Google. GHL itself shows Hightop's
+address as "Not set": a hidden address is not readable through the API by
+anybody, and its pencil would set a new one, which is re-verification.
+
+- Four new parts on the Details tab, both sides, each its OWN request in
+  `saveBasics` (masks `serviceArea`, `serviceItems`, `specialHours`, and the
+  separate attributes endpoint). `saveBasics` now runs a list of parts; a part
+  failing alone throws, with others it is reported in `notSaved`. Pure rules
+  in `details-rules.ts` (a leaf, browser-safe), pinned in verify. Editors in
+  `detail-editors.tsx`, same verbs and "Not saved yet" bar as the category
+  picker; each is keyed on Google's value so a save remounts on the truth.
+- SERVICE AREA: only the places move. `areaBody` sends the business type and
+  region back as Google has them; switching CUSTOMER_LOCATION_ONLY <->
+  CUSTOMER_AND_BUSINESS_LOCATION changes whether the address shows, so it is
+  not offered. A profile with no service area is not offered the editor. Max
+  20 places, refused not trimmed. Google wants PLACE IDS, which nothing in the
+  Business Profile API looks up: `findTowns` (service-area.ts) does one Serper
+  /maps search from the business's centre (3 credits, `guardSpend`,
+  `recordUsage`, nothing recorded on a fatal refusal) and `townsFrom` keeps
+  only results with a place id, NO category, and a name matching what was
+  typed. A place Google will not take comes back as a bare 404, reworded.
+- SERVICES: kept items go back untouched (structured ones, prices); new ones
+  are free-form under the primary category; no name twice, case-blind.
+- HOLIDAY HOURS: `specialHours` was not in `LOCATION_MASK` and is now, so it is
+  in `raw` after the next sync. From today only (UK date, `ukToday`); 00:00 is
+  24:00, a close before the open ends the next day (Google's limit).
+- ATTRIBUTES: read live on page open (`attributesFor`, two free reads, never
+  throws). `attributeMetadata` takes `parent` ALONE: adding `languageCode=en-GB`
+  or `pageSize=200` is answered 400. BOOL and URL attributes are editable
+  (URL covers WhatsApp, texting, social links, booking links); ENUM and
+  REPEATED_ENUM are left as Google has them. The save re-reads Google and
+  sends only rows that changed; a cleared value is in the mask and not in the
+  list, which removes it. No validateOnly exists for attributes.
+- ADDRESS: the box says where Google holds a hidden address
+  (`hiddenAddressLine`, against the town the business works from) and offers
+  "Change the name or address on Google" (`profileSearchUrl`) with the steps.
+- Proven with `validateOnly` on Hightop (nothing changed): Aylesford added to
+  the service area, a 22nd service, three holiday dates incl. midnight and
+  after-midnight closes, all accepted.
