@@ -3086,3 +3086,7 @@ card, save-bar and `HelpNote` patterns, plain English with no jargon).
   attributes in our words with links added from a chooser; the "↗" that
   rendered as an emoji tile drawn instead. On a phone a part's summary moves
   under its title. Pinned in verify.
+- Shipped as platform commit `c4ee7a8` and confirmed on the live site after
+  the deploy: same height as the preview (3,960px with every part open, from
+  5,609px before) and no sideways scroll at 390px. Checking the live page
+  after the deploy, not only the preview, is part of the rule.
