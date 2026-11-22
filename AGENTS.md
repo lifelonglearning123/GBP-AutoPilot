@@ -3029,3 +3029,9 @@ anybody, and its pencil would set a new one, which is re-verification.
 - Proven with `validateOnly` on Hightop (nothing changed): Aylesford added to
   the service area, a 22nd service, three holiday dates incl. midnight and
   after-midnight closes, all accepted.
+- The tab is called "Google profile" (2026-11-22), not "Details": Chao found
+  "Details" said nothing. Considered folding it into Settings and kept apart,
+  because Settings is how the APP works for a business (CRM, post notes,
+  directories, Remove) and this tab is the LISTING. The route stays
+  `/details` so links already sent still land. It is the one two-word tab
+  besides the agency's "Client report"; verify allows exactly that.
