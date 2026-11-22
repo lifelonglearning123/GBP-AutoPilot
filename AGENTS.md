@@ -3035,3 +3035,12 @@ anybody, and its pencil would set a new one, which is re-verification.
   directories, Remove) and this tab is the LISTING. The route stays
   `/details` so links already sent still land. It is the one two-word tab
   besides the agency's "Client report"; verify allows exactly that.
+- Categories versus services is explained where people get stuck
+  (2026-11-22): `CategoriesOrServices` in basics-form.tsx puts a `HelpNote`
+  "?" at the top of BOTH the Categories and the Services parts, because
+  somebody confused by one is usually confused by the other. Categories:
+  what kind of business, Google's fixed list, one primary and up to nine,
+  the biggest single factor in Maps searches, cannot be made up. Services:
+  the jobs in the owner's words, shown on the profile, much weaker, each
+  sits under a category, so set the primary first. Same words both sides;
+  verify pins that it appears twice.
