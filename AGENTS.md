@@ -3090,3 +3090,74 @@ card, save-bar and `HelpNote` patterns, plain English with no jargon).
   the deploy: same height as the preview (3,960px with every part open, from
   5,609px before) and no sideways scroll at 390px. Checking the live page
   after the deploy, not only the preview, is part of the rule.
+
+## Agency-only help, and every video hides customer details (2026-11-25)
+
+A client of an agency could not find how to change the prices on their sales
+page. The agency's help page (`/agency/help`) now opens with "Your prices",
+which the client's help page does not have.
+
+- `AGENCY_HELP` in `help-content.ts` is help for the agency alone (running its
+  own business on the platform). `HelpCentre` takes `topics`; the agency page
+  passes `[...AGENCY_HELP, ...HELP]`, the portal page passes nothing and gets
+  `HELP`. Verify fails if the portal page ever names `AGENCY_HELP`, and holds
+  the answer to the plans page's own words (Create plan, Retire, Hide from
+  clients, the self-serve tickbox).
+- What the answer says, checked against the code: a plan's price cannot be
+  edited, so a price change is a new plan plus Retire on the old one. The
+  sales page and the portal list plans that are active AND shown
+  (`clientVisibleOnly`). Retire stops new sign-ups and existing subscribers
+  keep paying. Hide from clients takes it off both, but an active hidden plan
+  is still offered in the payment-link box on the client's page: a price
+  agreed with one client.
+- A help block can be a video (`{ video, poster, captions, label }`), drawn as
+  `<video preload="none">` with a captions track, files in `public/help/`.
+  `.vtt` was added to the proxy matcher; verify checks every file a help video
+  names exists and that its extension is let through.
+- Hosting: on Vercel a video in `public/` costs only data sent when somebody
+  presses play (`preload="none"`); 1.3 MB is nothing against the allowance.
+  Move to Supabase Storage if full-motion recordings (the original was 26 MB
+  for 97 s) or many videos arrive: they bloat git history for good. YouTube
+  only on the agency side, never a client page.
+- Deploy of `a4aed24`: Vercel reported no status for it; a later commit
+  (`2be40b6`, pushed from elsewhere) carries it. If a push gets no Vercel
+  status at all, look at the Vercel dashboard rather than waiting.
+
+### EVERY video published anywhere hides customer details
+
+Chao's standing rule. Before any video goes onto the platform, a help page, a
+sales page or anywhere else people can see it, it is checked frame by frame
+and nothing in it identifies a customer, an agency or anybody's private
+activity. That means:
+
+- Agency names, logos, domains (`gbp.<agency>.com`), greetings with a person's
+  name, and the "you are in <agency>'s workspace" admin banner.
+- Clients' and businesses' names, reviews, alerts, figures, phone numbers,
+  email addresses and addresses.
+- Our own email, the browser's tabs, bookmarks, address bar and its history
+  dropdown, status-bar link previews, and the taskbar.
+
+How it was done for the pricing video, and the way to do it again:
+
+- Look first: pull a frame every few seconds (`ffmpeg -vf fps=1/6`), tile
+  them, read every one. The recording looked like "a dashboard and the
+  plans page"; read properly it showed Growtth ai's workspace, its client
+  Ayur Aesthetics in a bad-review alert, and at 1:21 the address bar's
+  history dropdown with Chao's own past searches.
+- A page that scrolls cannot be blurred safely by fixed rectangles: the
+  name moves and the blur does not. Rebuild instead from STILLS, one per
+  thing the narration says, each cropped to the page (`crop=1884:830:6:172`
+  on a 1920x1080 Edge capture drops tabs, bookmarks and taskbar), each
+  blurred where it needs it (`gblur` on a cropped box, overlaid back), each
+  read by eye after blurring, then held for the length of its sentence over
+  the ORIGINAL audio. Swap any stretch that cannot be cleaned (the dashboard
+  with the client alert) for the nearest clean still.
+- Check the finished file, not the inputs: pull frames from the output at
+  several points and read them again.
+- Captions are written from the audio (`faster_whisper`, `small.en`; feed
+  it a numpy array, the installed `av` rejects its file path) and tidied,
+  never read off a transcript that skips a section.
+- The raw recording stays OUT of git and off the web. It lives in
+  `docs/agent_help/`, which is not committed; only the cleaned copy is.
+- Better still: record on a demo workspace with no real clients, and the
+  problem does not arise.
