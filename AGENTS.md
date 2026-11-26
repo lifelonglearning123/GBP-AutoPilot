@@ -3205,3 +3205,25 @@ ever read "Agrees". Most of the rest were our own blind spots.
   The judging was proved by replaying the last real check's extracted fields
   through `settle`: Ayur goes from 1 agrees, 1 disagrees, 3 partly shown to
   3 agree, 2 listed-not-read.
+
+## A listing page is read three ways, cheapest first (2026-11-26)
+
+- `listingPage` (serper.ts) reads a page directly, for nothing, and keeps its
+  details blocks (`application/ld+json`); `pageHtml` strips scripts, and the
+  block IS a script. An empty body on a 2xx (Treatwell answers 202 with
+  nothing) is a refusal.
+- `structuredFor` (citations-rules.ts, pinned) takes the name, phone and
+  address a page STATES, only from a block that is this business (name
+  agrees, or its phone or postcode does). When it states phone and address
+  the model is not asked at all; otherwise the model fills what is left out
+  and never overrules it. Fresha keeps the phone off the page and gives it in
+  the block, so `hides` now means "not missed when absent", and what a page
+  states after all IS compared. `forwards` (Checkatrade) is the one that
+  means "never compare the phone".
+- `fetchedPage`: Serper's page fetcher (`scrape.serper.dev`), only for a page
+  plainly the business's own (`chosen.strong`) that refused a free read, never
+  a `closed` directory. It charges what it says in `credits`: 10 for a page
+  that was blocking, 2 otherwise. `ListingRead.credits` carries the real
+  charge; `searches` is calls. Tried 2026-11-26: Yell read every time,
+  Treatwell once in five ("Scraping failed", a 500: no page, not an error),
+  Facebook never.
