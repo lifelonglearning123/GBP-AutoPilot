@@ -3161,3 +3161,47 @@ How it was done for the pricing video, and the way to do it again:
   `docs/agent_help/`, which is not committed; only the cleaned copy is.
 - Better still: record on a demo workspace with no real clients, and the
   problem does not arise.
+
+## A listings check says only what it could see (2026-11-26)
+
+Read from every check kept (25 runs, 13 businesses): 4 rows of about 300 had
+ever read "Agrees". Most of the rest were our own blind spots.
+
+- TWO NEW STATES (`CitationStatus`). `by_hand`: a directory whose listings are
+  not in Google's results (`Directory.look`: Bing Places, Apple Maps; 0 found
+  in 23 checks each, and a `site:` search of each returns nothing). The row is
+  written at the start with a link to open, never searched, never counted.
+  `unread`: the listing is there and the directory kept its page from us. It
+  is found, and earns and costs nothing: the audit judges agreement among the
+  listings that could be READ, and is unknown when none could. `FOUND` in
+  citations-rules.ts is the one list of "a listing was found"; a count that
+  says "everything but not_listed" would count a `by_hand` row as a listing.
+- `Directory.hides`: what a directory prints for nobody (Treatwell, Fresha and
+  Checkatrade no phone of the business's own; MyBuilder and Rated People
+  neither). A hidden field is neither missed nor compared. `closed`: never
+  fetched (Facebook answers a robot with a sign-in page).
+- THE SAME POSTCODE OR PHONE SETTLES WHO IT IS. A name worded another way is
+  then a variant. "Ayur Aesthetics (Ayur Kerala)" at the same address read
+  "Disagrees" seven checks running.
+- A LISTING FOUND ONCE IS GONE BACK TO (`remembered`): the last finished
+  check's own pages are read again by address, free when the page will have
+  us, one exact search when not, and searched for by name only when gone.
+  LINKED on a pending row's `issues` says the address came from the business's
+  website; without it the address is remembered or `websitePage` (Trustpilot
+  files by website: /review/<host>).
+- CATEGORIES: each is judged alone (`inSet`), not as one joined line. The
+  PRIMARY decides the set; the extras only when it fits none, and for a set's
+  `only` directories. `NOT_A_PROVIDER` (supply, store, shop, school,
+  equipment...) joins no set unless the matched word carries the term
+  ("coffee shop"); each set has a `not` list ("eyebrow" beside "bar").
+- Hotfrog and Trustpilot ARE searchable (proved 2026-11-26); their zeros are
+  real or a name problem, not blindness.
+- Not built, and said: a seven-day guard on listings checks (Ayur was checked
+  six times in five days), reading a page's structured data before the model,
+  a search by phone number, sets for the trades that have none (estate agents,
+  vets, care, childcare...), and weighting directories. Eight found is still
+  full marks, with two of the fifteen now uncountable.
+- This PC has no AI key, so a listings check cannot be run end to end here.
+  The judging was proved by replaying the last real check's extracted fields
+  through `settle`: Ayur goes from 1 agrees, 1 disagrees, 3 partly shown to
+  3 agree, 2 listed-not-read.
